@@ -1,0 +1,24 @@
+{
+  "name": "future.viewer",
+  "version": "0.0.1",
+  "description": "soulution and performance space visualiser",
+  "main": "index.js",
+  "author": "Dimitrie Andrei Stefanescu | http://dimitrie.org",
+  "license": "GPL-2.0",
+  "scripts": {
+    "watch-sass": "sass --watch src/sass/app.scss:dist/css/app.css",
+    "watch-jade": "jade --watch src/jade/index.jade -o dist/ -P",
+    "build-js": "browserify src/js/app.js -o dist/js/app.js",
+    "watch-js": "nodemon -e js -w src/js -x 'npm run build-js'",
+    "serve-local": "http-server -p 1337",
+    "watch": "npm run watch-sass & npm run watch-jade & npm run watch-js & npm run serve-local"
+  },
+  "dependencies": {
+    "jade": "^1.11.0",
+    "jquery": "^2.2.0",
+    "three": "^0.73.2"
+  },
+  "devDependencies": {
+    "watchify": "^3.7.0"
+  }
+}
