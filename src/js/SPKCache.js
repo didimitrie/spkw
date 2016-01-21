@@ -10,12 +10,21 @@ var SPKCache = function() {
   } 
 
   SPKCache.get = function(key) {
-
+    
+    for( var i = 0; i < SPKCache.instances.length; i++ ) {
+    
+      if( SPKCache.instances[i].key === key ) 
+    
+        return SPKCache.instances[i];
+    
+    }
+    
+    return null;
   }
 
   SPKCache.clear = function() {
-    
+    // TODO 
   }
 }
 
-module.exports = SPKCache;
+module.exports = new SPKCache();

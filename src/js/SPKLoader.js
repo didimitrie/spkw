@@ -1,4 +1,8 @@
 
+/*
+  Handles all json loading and parsing
+ */
+
 var THREE       = require('three');
 
 var SPKLoader = function () {
@@ -35,8 +39,6 @@ var SPKLoader = function () {
     collatedReturn.properties = json.metadata.properties;
 
     onLoadAction(collatedReturn);
-
-    //return collatedReturn;
 
   }
 
@@ -77,8 +79,13 @@ var SPKLoader = function () {
             geometry = geometryLoader.parse( data.data ).geometry;
             break;
 
+          case 'SPKL_Options' :
+            console.warn("Found some SPKL Options. Ignoring.")
+            break;
+            
           default : 
-            console.warn("Unsuported data type detected: /// " + data.type + " ////");
+            console.warn("Unsuported data type detected!");
+            console.log(data);
             break;
 
         }//end switch

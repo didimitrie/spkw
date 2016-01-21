@@ -1,9 +1,11 @@
 
 var $           = require('jquery');
 var THREE       = require('three');
+var OrbitCtrls  = require('three-orbit-controls')(THREE);
 var noUISlider  = require('nouislider');
 var SPKLoader   = require('./SPKLoader.js');
 var SPKCache    = require('./SPKCache.js');
+var SPKMaker    = require('./SPKObjectMaker.js');
 
 var SPK = function () {
 
@@ -34,13 +36,19 @@ var SPK = function () {
     currentKey : ""
   }
 
-
   /*************************************************
   /   THREE vars
   *************************************************/
 
-  var renderer, camera, scene;
-
+  var VIEWER = {
+    renderer : null,
+    camera : null,
+    scene : null, 
+    controls : null,
+    sunlight : null,
+    raycaster : null
+  }
+  
 
   /*************************************************
   /   SPK Methods
@@ -58,9 +66,41 @@ var SPK = function () {
     HTML.sliders = $(HTML.sidebar).find("#spk-sliders");
     HTML.meta = $(HTML.sidebar).find("#spk-metadata");
 
+    // make the scene + renderer
+    // not sure if it's a logical place to put it
+    
+    VIEWER.scene = new THREE.Scene();
+
+    VIEWER.renderer = new THREE.WebGLRenderer( { antialias : true, alpha : true } );
+
+    VIEWER.renderer.setClearColor( 0xFFFFFF ); 
+
+    VIEWER.renderer.setPixelRatio( window.devicePixelRatio );
+    
+    VIEWER.renderer.setSize( $(HTML.canvas).width(), $(HTML.canvas).height() ); 
+
+    VIEWER.renderer.shadowMap.enabled = true;
+    
+    $(HTML.canvas).append( VIEWER.renderer.domElement );
+
+    VIEWER.renderer.setSize( $(HTML.canvas).width(), $(HTML.canvas).height() ); 
+
+    VIEWER.camera = new THREE.PerspectiveCamera( 40, $(HTML.canvas).width() * 1 / $(HTML.canvas).height(), 200 );
+
+    VIEWER.camera.position.z = -200; VIEWER.camera.position.y = 200;
+    
+    VIEWER.controls = new OrbitCtrls( VIEWER.camera, VIEWER.renderer.domElement );
+
     // load parameters 
+    
     SPK.loadParameters();
-    SPK.loadInstance();
+
+    SPK.loadStaticInstance();
+    //SPK.loadInstance();
+
+    SPK.testGeo();
+    
+    SPK.render();
   }
 
   SPK.loadParameters = function(callback) {
@@ -151,16 +191,60 @@ var SPK = function () {
   }
 
   SPK.loadInstance = function(key) {
- 
-    SPKLoader.load("./testmodel/4,0,0.8,3,0.4,.json", function (obj) {
-
+    
+    SPKLoader.load( "./testmodel/" + key + ".json", function (obj) {
       console.log(obj);
+      for( var i = 0; i < obj.geometries.length; i++ ) {
+
+        SPKMaker.make( obj.geometries[i], key, function( obj ) { 
+          // TODO : Add to scene
+          VIEWER.scene.add(obj);
+          // TODO : Add to cache
+        });
+
+      }
+
+    });
+
+  }
+
+  SPK.loadStaticInstance = function() {
+
+    SPKLoader.load( "./testmodel/static.json", function( obj ) {
+
+      for( var i = 0; i < obj.geometries.length; i++ ) {
+
+        SPKMaker.make(obj.geometries[i], "static", function( obj ) { 
+          
+          // TODO : Add to scene
+          // TODO : Make unremovable
+          
+          obj.removable = false;
+          
+          VIEWER.scene.add(obj);
+        
+        });
+
+      }
 
     });
 
   }
 
   SPK.render = function() {
+
+    requestAnimationFrame( SPK.render );
+    
+    VIEWER.renderer.render(VIEWER.scene, VIEWER.camera);
+    
+  }
+
+  SPK.testGeo = function() {
+
+    var sphere = new THREE.Mesh( new THREE.IcosahedronGeometry( 50, 7 ), new THREE.MeshNormalMaterial( ) );
+    sphere.material.opacity = 0.3;
+    sphere.material.transparent = true;
+    VIEWER.scene.add( sphere );
 
   }
 
