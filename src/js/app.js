@@ -1,11 +1,10 @@
 
 var $   = require('jquery'); 
-var SPK = require('./speckle.js');
+var SPK = require('./SPK.js');
 
 $(function(){
-
-  //SPK.init();
-  //SPK.render();
+  
+  SPK.init($('#spk-viewer'));
 
 });
 
