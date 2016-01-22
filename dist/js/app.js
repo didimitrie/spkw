@@ -50037,7 +50037,13 @@ var SPK = function (wrapper) {
           }
         });
 
+        // set the callbacks
+
         slider.on("slide", SPK.updateInstances);
+
+        slider.on("end", SPK.updateInstances);
+
+        // add to master
 
         SPK.GLOBALS.sliders.push(slider);
       }
@@ -50111,7 +50117,6 @@ var SPK = function (wrapper) {
 
         }
       }
-
     }
 
     SPK.swap(iin, out);
