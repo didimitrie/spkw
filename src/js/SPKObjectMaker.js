@@ -38,9 +38,9 @@ var SPKObjectMaker = function() {
 
       SPKObjectMaker.makePoint( data, key, callback );
 
-    else 
+    else {}
 
-      console.warn( "ERR_MAKE: Unidentified type encountered: " + data.SPKLType );
+      //console.warn( "ERR_MAKE: Unidentified type encountered: " + data.SPKLType );
   }
 
   /**
@@ -50,8 +50,9 @@ var SPKObjectMaker = function() {
   SPKObjectMaker.makeMesh = function( data, key, callback ) {
 
     var material = new THREE.MeshPhongMaterial( { color: 0xdddddd, specular: 0xD1ECFF, shininess: 30, shading: THREE.FlatShading } );
+    //var material = new THREE.MeshNormalMaterial();
     
-    material.side = 2; material. transparent = true; 
+    material.side = THREE.DoubleSide; material.transparent = true; material.opacity = 1;
 
     var myObj = new THREE.Mesh(data, material);
     
@@ -63,7 +64,7 @@ var SPKObjectMaker = function() {
 
     myObj.instance = key;
 
-    var myEdges = new THREE.EdgesHelper( myObj, 0xFFFFFF, 45 );
+    var myEdges = new THREE.EdgesHelper( myObj, 0x4D4D4D, 45 );
     
     myEdges.removable = true; myEdges.material.transparent = true;
     
@@ -109,7 +110,7 @@ var SPKObjectMaker = function() {
 
   SPKObjectMaker.makePolyline = function( data, key, callback ) {
 
-    var material = new THREE.LineBasicMaterial( { color : 0x88FFE7 } );
+    var material = new THREE.LineBasicMaterial( { color : 0x24B9AC } );
     
     material.transparent = true;
 

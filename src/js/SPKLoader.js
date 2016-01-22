@@ -84,8 +84,8 @@ var SPKLoader = function () {
             break;
             
           default : 
-            console.warn("Unsuported data type detected!");
-            console.log(data);
+            // console.warn("Unsuported data type detected!");
+            // console.log(data);
             break;
 
         }//end switch

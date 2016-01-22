@@ -1,3 +1,36 @@
+@import url(https://fonts.googleapis.com/css?family=Titillium+Web:400,300,600);
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline; }
+
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+  display: block; }
+
+body {
+  line-height: 1; }
+
+ol, ul {
+  list-style: none; }
+
+blockquote, q {
+  quotes: none; }
+
+blockquote:before, blockquote:after {
+  content: "";
+  content: none; }
+
+q:before, q:after {
+  content: "";
+  content: none; }
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0; }
+
 .noUi-target,
 .noUi-target * {
   -webkit-touch-callout: none;
@@ -53,13 +86,13 @@
 /* Slider size and handle placement;
  */
 .noUi-horizontal {
-  height: 20px; }
+  height: 10px; }
 
 .noUi-horizontal .noUi-handle {
   width: 20px;
   height: 20px;
   left: -11px;
-  top: 0px;
+  top: -5px;
   -webkit-box-shadow: 0px 0px 62px 1px white;
   -moz-box-shadow: 0px 0px 62px 1px white;
   box-shadow: 0px 0px 62px 1px white; }
@@ -76,7 +109,7 @@
 /* Styling;
  */
 .noUi-background {
-  background: #B8B8B8; }
+  background: #D8D8D8; }
 
 .noUi-connect {
   background: #0C00FF; }
@@ -91,11 +124,9 @@
 
 .noUi-handle {
   border-radius: 15px;
-  background: #FFFFFF;
+  background: #B9B9B9;
   cursor: default; }
 
-/* Handle stripes;
- */
 .noUi-handle:after {
   left: 17px; }
 
@@ -149,7 +180,8 @@
   width: 40px;
   position: absolute;
   text-align: center;
-  color: #FFFFFF; }
+  color: #333333;
+  font-size: x-small; }
 
 .noUi-value-sub {
   color: #ccc;
@@ -160,7 +192,7 @@
  */
 .noUi-marker {
   position: absolute;
-  background: #CCC; }
+  background: #545454; }
 
 .noUi-marker-sub {
   background: #AAA; }
@@ -228,38 +260,50 @@ body {
   position: absolute;
   width: 100%;
   height: 100%;
-  margin: 0; }
+  font-family: "Titillium Web", sans-serif; }
 
 h1 {
   color: white; }
 
-#spk-viewer {
+p {
+  font-size: 12px; }
+
+#spk-viewer, #spk-viewer2 {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%; }
 
+#spk-viewer2 {
+  top: 50%; }
+
 #spk-sidebar {
   position: absolute;
   top: 0;
   left: 0;
-  width: 30%;
+  width: 25%;
   height: 100%;
-  background-color: #B3B3B3;
+  background-color: #F4F4F4;
   z-index: 2;
   box-sizing: border-box;
-  padding: 20px; }
+  padding: 20px;
+  -webkit-box-shadow: 14px 0px 84px -12px rgba(0, 0, 0, 0.25);
+  -moz-box-shadow: 14px 0px 84px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 14px 0px 84px -12px rgba(0, 0, 0, 0.25); }
 
 #spk-canvas {
   position: absolute;
   top: 0;
-  left: 30%;
-  width: 70%;
+  left: 25%;
+  width: 75%;
   height: 100%;
   z-index: 1; }
 
 .parameter {
   margin-bottom: 30px; }
+
+.basic-slider {
+  margin-top: 10px; }
 
 /*# sourceMappingURL=app.css.map */

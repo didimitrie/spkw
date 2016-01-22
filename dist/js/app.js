@@ -49006,6 +49006,898 @@ if (typeof exports !== 'undefined') {
 }
 
 },{}],5:[function(require,module,exports){
+/**
+ * Tween.js - Licensed under the MIT license
+ * https://github.com/tweenjs/tween.js
+ * ----------------------------------------------
+ *
+ * See https://github.com/tweenjs/tween.js/graphs/contributors for the full list of contributors.
+ * Thank you all, you're awesome!
+ */
+
+// Include a performance.now polyfill
+(function () {
+
+	if ('performance' in window === false) {
+		window.performance = {};
+	}
+
+	// IE 8
+	Date.now = (Date.now || function () {
+		return new Date().getTime();
+	});
+
+	if ('now' in window.performance === false) {
+		var offset = window.performance.timing && window.performance.timing.navigationStart ? window.performance.timing.navigationStart
+		                                                                                    : Date.now();
+
+		window.performance.now = function () {
+			return Date.now() - offset;
+		};
+	}
+
+})();
+
+var TWEEN = TWEEN || (function () {
+
+	var _tweens = [];
+
+	return {
+
+		getAll: function () {
+
+			return _tweens;
+
+		},
+
+		removeAll: function () {
+
+			_tweens = [];
+
+		},
+
+		add: function (tween) {
+
+			_tweens.push(tween);
+
+		},
+
+		remove: function (tween) {
+
+			var i = _tweens.indexOf(tween);
+
+			if (i !== -1) {
+				_tweens.splice(i, 1);
+			}
+
+		},
+
+		update: function (time) {
+
+			if (_tweens.length === 0) {
+				return false;
+			}
+
+			var i = 0;
+
+			time = time !== undefined ? time : window.performance.now();
+
+			while (i < _tweens.length) {
+
+				if (_tweens[i].update(time)) {
+					i++;
+				} else {
+					_tweens.splice(i, 1);
+				}
+
+			}
+
+			return true;
+
+		}
+	};
+
+})();
+
+TWEEN.Tween = function (object) {
+
+	var _object = object;
+	var _valuesStart = {};
+	var _valuesEnd = {};
+	var _valuesStartRepeat = {};
+	var _duration = 1000;
+	var _repeat = 0;
+	var _yoyo = false;
+	var _isPlaying = false;
+	var _reversed = false;
+	var _delayTime = 0;
+	var _startTime = null;
+	var _easingFunction = TWEEN.Easing.Linear.None;
+	var _interpolationFunction = TWEEN.Interpolation.Linear;
+	var _chainedTweens = [];
+	var _onStartCallback = null;
+	var _onStartCallbackFired = false;
+	var _onUpdateCallback = null;
+	var _onCompleteCallback = null;
+	var _onStopCallback = null;
+
+	// Set all starting values present on the target object
+	for (var field in object) {
+		_valuesStart[field] = parseFloat(object[field], 10);
+	}
+
+	this.to = function (properties, duration) {
+
+		if (duration !== undefined) {
+			_duration = duration;
+		}
+
+		_valuesEnd = properties;
+
+		return this;
+
+	};
+
+	this.start = function (time) {
+
+		TWEEN.add(this);
+
+		_isPlaying = true;
+
+		_onStartCallbackFired = false;
+
+		_startTime = time !== undefined ? time : window.performance.now();
+		_startTime += _delayTime;
+
+		for (var property in _valuesEnd) {
+
+			// Check if an Array was provided as property value
+			if (_valuesEnd[property] instanceof Array) {
+
+				if (_valuesEnd[property].length === 0) {
+					continue;
+				}
+
+				// Create a local copy of the Array with the start value at the front
+				_valuesEnd[property] = [_object[property]].concat(_valuesEnd[property]);
+
+			}
+
+			// If `to()` specifies a property that doesn't exist in the source object,
+			// we should not set that property in the object
+			if (_valuesStart[property] === undefined) {
+				continue;
+			}
+
+			_valuesStart[property] = _object[property];
+
+			if ((_valuesStart[property] instanceof Array) === false) {
+				_valuesStart[property] *= 1.0; // Ensures we're using numbers, not strings
+			}
+
+			_valuesStartRepeat[property] = _valuesStart[property] || 0;
+
+		}
+
+		return this;
+
+	};
+
+	this.stop = function () {
+
+		if (!_isPlaying) {
+			return this;
+		}
+
+		TWEEN.remove(this);
+		_isPlaying = false;
+
+		if (_onStopCallback !== null) {
+			_onStopCallback.call(_object);
+		}
+
+		this.stopChainedTweens();
+		return this;
+
+	};
+
+	this.stopChainedTweens = function () {
+
+		for (var i = 0, numChainedTweens = _chainedTweens.length; i < numChainedTweens; i++) {
+			_chainedTweens[i].stop();
+		}
+
+	};
+
+	this.delay = function (amount) {
+
+		_delayTime = amount;
+		return this;
+
+	};
+
+	this.repeat = function (times) {
+
+		_repeat = times;
+		return this;
+
+	};
+
+	this.yoyo = function (yoyo) {
+
+		_yoyo = yoyo;
+		return this;
+
+	};
+
+
+	this.easing = function (easing) {
+
+		_easingFunction = easing;
+		return this;
+
+	};
+
+	this.interpolation = function (interpolation) {
+
+		_interpolationFunction = interpolation;
+		return this;
+
+	};
+
+	this.chain = function () {
+
+		_chainedTweens = arguments;
+		return this;
+
+	};
+
+	this.onStart = function (callback) {
+
+		_onStartCallback = callback;
+		return this;
+
+	};
+
+	this.onUpdate = function (callback) {
+
+		_onUpdateCallback = callback;
+		return this;
+
+	};
+
+	this.onComplete = function (callback) {
+
+		_onCompleteCallback = callback;
+		return this;
+
+	};
+
+	this.onStop = function (callback) {
+
+		_onStopCallback = callback;
+		return this;
+
+	};
+
+	this.update = function (time) {
+
+		var property;
+		var elapsed;
+		var value;
+
+		if (time < _startTime) {
+			return true;
+		}
+
+		if (_onStartCallbackFired === false) {
+
+			if (_onStartCallback !== null) {
+				_onStartCallback.call(_object);
+			}
+
+			_onStartCallbackFired = true;
+
+		}
+
+		elapsed = (time - _startTime) / _duration;
+		elapsed = elapsed > 1 ? 1 : elapsed;
+
+		value = _easingFunction(elapsed);
+
+		for (property in _valuesEnd) {
+
+			// Don't update properties that do not exist in the source object
+			if (_valuesStart[property] === undefined) {
+				continue;
+			}
+
+			var start = _valuesStart[property] || 0;
+			var end = _valuesEnd[property];
+
+			if (end instanceof Array) {
+
+				_object[property] = _interpolationFunction(end, value);
+
+			} else {
+
+				// Parses relative end values with start as base (e.g.: +10, -3)
+				if (typeof (end) === 'string') {
+
+					if (end.startsWith('+') || end.startsWith('-')) {
+						end = start + parseFloat(end, 10);
+					} else {
+						end = parseFloat(end, 10);
+					}
+				}
+
+				// Protect against non numeric properties.
+				if (typeof (end) === 'number') {
+					_object[property] = start + (end - start) * value;
+				}
+
+			}
+
+		}
+
+		if (_onUpdateCallback !== null) {
+			_onUpdateCallback.call(_object, value);
+		}
+
+		if (elapsed === 1) {
+
+			if (_repeat > 0) {
+
+				if (isFinite(_repeat)) {
+					_repeat--;
+				}
+
+				// Reassign starting values, restart by making startTime = now
+				for (property in _valuesStartRepeat) {
+
+					if (typeof (_valuesEnd[property]) === 'string') {
+						_valuesStartRepeat[property] = _valuesStartRepeat[property] + parseFloat(_valuesEnd[property], 10);
+					}
+
+					if (_yoyo) {
+						var tmp = _valuesStartRepeat[property];
+
+						_valuesStartRepeat[property] = _valuesEnd[property];
+						_valuesEnd[property] = tmp;
+					}
+
+					_valuesStart[property] = _valuesStartRepeat[property];
+
+				}
+
+				if (_yoyo) {
+					_reversed = !_reversed;
+				}
+
+				_startTime = time + _delayTime;
+
+				return true;
+
+			} else {
+
+				if (_onCompleteCallback !== null) {
+					_onCompleteCallback.call(_object);
+				}
+
+				for (var i = 0, numChainedTweens = _chainedTweens.length; i < numChainedTweens; i++) {
+					// Make the chained tweens start exactly at the time they should,
+					// even if the `update()` method was called way past the duration of the tween
+					_chainedTweens[i].start(_startTime + _duration);
+				}
+
+				return false;
+
+			}
+
+		}
+
+		return true;
+
+	};
+
+};
+
+
+TWEEN.Easing = {
+
+	Linear: {
+
+		None: function (k) {
+
+			return k;
+
+		}
+
+	},
+
+	Quadratic: {
+
+		In: function (k) {
+
+			return k * k;
+
+		},
+
+		Out: function (k) {
+
+			return k * (2 - k);
+
+		},
+
+		InOut: function (k) {
+
+			if ((k *= 2) < 1) {
+				return 0.5 * k * k;
+			}
+
+			return - 0.5 * (--k * (k - 2) - 1);
+
+		}
+
+	},
+
+	Cubic: {
+
+		In: function (k) {
+
+			return k * k * k;
+
+		},
+
+		Out: function (k) {
+
+			return --k * k * k + 1;
+
+		},
+
+		InOut: function (k) {
+
+			if ((k *= 2) < 1) {
+				return 0.5 * k * k * k;
+			}
+
+			return 0.5 * ((k -= 2) * k * k + 2);
+
+		}
+
+	},
+
+	Quartic: {
+
+		In: function (k) {
+
+			return k * k * k * k;
+
+		},
+
+		Out: function (k) {
+
+			return 1 - (--k * k * k * k);
+
+		},
+
+		InOut: function (k) {
+
+			if ((k *= 2) < 1) {
+				return 0.5 * k * k * k * k;
+			}
+
+			return - 0.5 * ((k -= 2) * k * k * k - 2);
+
+		}
+
+	},
+
+	Quintic: {
+
+		In: function (k) {
+
+			return k * k * k * k * k;
+
+		},
+
+		Out: function (k) {
+
+			return --k * k * k * k * k + 1;
+
+		},
+
+		InOut: function (k) {
+
+			if ((k *= 2) < 1) {
+				return 0.5 * k * k * k * k * k;
+			}
+
+			return 0.5 * ((k -= 2) * k * k * k * k + 2);
+
+		}
+
+	},
+
+	Sinusoidal: {
+
+		In: function (k) {
+
+			return 1 - Math.cos(k * Math.PI / 2);
+
+		},
+
+		Out: function (k) {
+
+			return Math.sin(k * Math.PI / 2);
+
+		},
+
+		InOut: function (k) {
+
+			return 0.5 * (1 - Math.cos(Math.PI * k));
+
+		}
+
+	},
+
+	Exponential: {
+
+		In: function (k) {
+
+			return k === 0 ? 0 : Math.pow(1024, k - 1);
+
+		},
+
+		Out: function (k) {
+
+			return k === 1 ? 1 : 1 - Math.pow(2, - 10 * k);
+
+		},
+
+		InOut: function (k) {
+
+			if (k === 0) {
+				return 0;
+			}
+
+			if (k === 1) {
+				return 1;
+			}
+
+			if ((k *= 2) < 1) {
+				return 0.5 * Math.pow(1024, k - 1);
+			}
+
+			return 0.5 * (- Math.pow(2, - 10 * (k - 1)) + 2);
+
+		}
+
+	},
+
+	Circular: {
+
+		In: function (k) {
+
+			return 1 - Math.sqrt(1 - k * k);
+
+		},
+
+		Out: function (k) {
+
+			return Math.sqrt(1 - (--k * k));
+
+		},
+
+		InOut: function (k) {
+
+			if ((k *= 2) < 1) {
+				return - 0.5 * (Math.sqrt(1 - k * k) - 1);
+			}
+
+			return 0.5 * (Math.sqrt(1 - (k -= 2) * k) + 1);
+
+		}
+
+	},
+
+	Elastic: {
+
+		In: function (k) {
+
+			var s;
+			var a = 0.1;
+			var p = 0.4;
+
+			if (k === 0) {
+				return 0;
+			}
+
+			if (k === 1) {
+				return 1;
+			}
+
+			if (!a || a < 1) {
+				a = 1;
+				s = p / 4;
+			} else {
+				s = p * Math.asin(1 / a) / (2 * Math.PI);
+			}
+
+			return - (a * Math.pow(2, 10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / p));
+
+		},
+
+		Out: function (k) {
+
+			var s;
+			var a = 0.1;
+			var p = 0.4;
+
+			if (k === 0) {
+				return 0;
+			}
+
+			if (k === 1) {
+				return 1;
+			}
+
+			if (!a || a < 1) {
+				a = 1;
+				s = p / 4;
+			} else {
+				s = p * Math.asin(1 / a) / (2 * Math.PI);
+			}
+
+			return (a * Math.pow(2, - 10 * k) * Math.sin((k - s) * (2 * Math.PI) / p) + 1);
+
+		},
+
+		InOut: function (k) {
+
+			var s;
+			var a = 0.1;
+			var p = 0.4;
+
+			if (k === 0) {
+				return 0;
+			}
+
+			if (k === 1) {
+				return 1;
+			}
+
+			if (!a || a < 1) {
+				a = 1;
+				s = p / 4;
+			} else {
+				s = p * Math.asin(1 / a) / (2 * Math.PI);
+			}
+
+			if ((k *= 2) < 1) {
+				return - 0.5 * (a * Math.pow(2, 10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / p));
+			}
+
+			return a * Math.pow(2, -10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / p) * 0.5 + 1;
+
+		}
+
+	},
+
+	Back: {
+
+		In: function (k) {
+
+			var s = 1.70158;
+
+			return k * k * ((s + 1) * k - s);
+
+		},
+
+		Out: function (k) {
+
+			var s = 1.70158;
+
+			return --k * k * ((s + 1) * k + s) + 1;
+
+		},
+
+		InOut: function (k) {
+
+			var s = 1.70158 * 1.525;
+
+			if ((k *= 2) < 1) {
+				return 0.5 * (k * k * ((s + 1) * k - s));
+			}
+
+			return 0.5 * ((k -= 2) * k * ((s + 1) * k + s) + 2);
+
+		}
+
+	},
+
+	Bounce: {
+
+		In: function (k) {
+
+			return 1 - TWEEN.Easing.Bounce.Out(1 - k);
+
+		},
+
+		Out: function (k) {
+
+			if (k < (1 / 2.75)) {
+				return 7.5625 * k * k;
+			} else if (k < (2 / 2.75)) {
+				return 7.5625 * (k -= (1.5 / 2.75)) * k + 0.75;
+			} else if (k < (2.5 / 2.75)) {
+				return 7.5625 * (k -= (2.25 / 2.75)) * k + 0.9375;
+			} else {
+				return 7.5625 * (k -= (2.625 / 2.75)) * k + 0.984375;
+			}
+
+		},
+
+		InOut: function (k) {
+
+			if (k < 0.5) {
+				return TWEEN.Easing.Bounce.In(k * 2) * 0.5;
+			}
+
+			return TWEEN.Easing.Bounce.Out(k * 2 - 1) * 0.5 + 0.5;
+
+		}
+
+	}
+
+};
+
+TWEEN.Interpolation = {
+
+	Linear: function (v, k) {
+
+		var m = v.length - 1;
+		var f = m * k;
+		var i = Math.floor(f);
+		var fn = TWEEN.Interpolation.Utils.Linear;
+
+		if (k < 0) {
+			return fn(v[0], v[1], f);
+		}
+
+		if (k > 1) {
+			return fn(v[m], v[m - 1], m - f);
+		}
+
+		return fn(v[i], v[i + 1 > m ? m : i + 1], f - i);
+
+	},
+
+	Bezier: function (v, k) {
+
+		var b = 0;
+		var n = v.length - 1;
+		var pw = Math.pow;
+		var bn = TWEEN.Interpolation.Utils.Bernstein;
+
+		for (var i = 0; i <= n; i++) {
+			b += pw(1 - k, n - i) * pw(k, i) * v[i] * bn(n, i);
+		}
+
+		return b;
+
+	},
+
+	CatmullRom: function (v, k) {
+
+		var m = v.length - 1;
+		var f = m * k;
+		var i = Math.floor(f);
+		var fn = TWEEN.Interpolation.Utils.CatmullRom;
+
+		if (v[0] === v[m]) {
+
+			if (k < 0) {
+				i = Math.floor(f = m * (1 + k));
+			}
+
+			return fn(v[(i - 1 + m) % m], v[i], v[(i + 1) % m], v[(i + 2) % m], f - i);
+
+		} else {
+
+			if (k < 0) {
+				return v[0] - (fn(v[0], v[0], v[1], v[1], -f) - v[0]);
+			}
+
+			if (k > 1) {
+				return v[m] - (fn(v[m], v[m], v[m - 1], v[m - 1], f - m) - v[m]);
+			}
+
+			return fn(v[i ? i - 1 : 0], v[i], v[m < i + 1 ? m : i + 1], v[m < i + 2 ? m : i + 2], f - i);
+
+		}
+
+	},
+
+	Utils: {
+
+		Linear: function (p0, p1, t) {
+
+			return (p1 - p0) * t + p0;
+
+		},
+
+		Bernstein: function (n, i) {
+
+			var fc = TWEEN.Interpolation.Utils.Factorial;
+
+			return fc(n) / fc(i) / fc(n - i);
+
+		},
+
+		Factorial: (function () {
+
+			var a = [1];
+
+			return function (n) {
+
+				var s = 1;
+
+				if (a[n]) {
+					return a[n];
+				}
+
+				for (var i = n; i > 1; i--) {
+					s *= i;
+				}
+
+				a[n] = s;
+				return s;
+
+			};
+
+		})(),
+
+		CatmullRom: function (p0, p1, p2, p3, t) {
+
+			var v0 = (p2 - p0) * 0.5;
+			var v1 = (p3 - p1) * 0.5;
+			var t2 = t * t;
+			var t3 = t * t2;
+
+			return (2 * p1 - 2 * p2 + v0 + v1) * t3 + (- 3 * p1 + 3 * p2 - 2 * v0 - v1) * t2 + v0 * t + p1;
+
+		}
+
+	}
+
+};
+
+// UMD (Universal Module Definition)
+(function (root) {
+
+	if (typeof define === 'function' && define.amd) {
+
+		// AMD
+		define([], function () {
+			return TWEEN;
+		});
+
+	} else if (typeof module !== 'undefined' && typeof exports === 'object') {
+
+		// Node.js
+		module.exports = TWEEN;
+
+	} else if (root !== undefined) {
+
+		// Global variable
+		root.TWEEN = TWEEN;
+
+	}
+
+})(this);
+
+},{}],6:[function(require,module,exports){
 
 var $           = require('jquery');
 var THREE       = require('three');
@@ -49014,8 +49906,9 @@ var noUISlider  = require('nouislider');
 var SPKLoader   = require('./SPKLoader.js');
 var SPKCache    = require('./SPKCache.js');
 var SPKMaker    = require('./SPKObjectMaker.js');
+var TWEEN       = require('tween.js');
 
-var SPK = function () {
+var SPK = function (wrapper) {
 
   /*************************************************
   /   SPK Global
@@ -49024,10 +49917,10 @@ var SPK = function () {
   var SPK = this;
   
   /*************************************************
-  /   SPK HTMLs
+  /   SPK SPK.HMTLs
   *************************************************/
 
-  var HTML = { 
+  SPK.HMTL = { 
     wrapper : "" , 
     canvas : "", 
     sidebar : "",
@@ -49039,16 +49932,18 @@ var SPK = function () {
   /   SPK Vars
   *************************************************/
 
-  var GLOBALS = {
+  SPK.GLOBALS = {
     sliders : [],
-    currentKey : ""
+    currentKey : "",
+    boundingSphere : "",
+    tweens : ""
   }
 
   /*************************************************
   /   THREE vars
   *************************************************/
 
-  var VIEWER = {
+  SPK.VIEWER = {
     renderer : null,
     camera : null,
     scene : null, 
@@ -49069,46 +49964,34 @@ var SPK = function () {
   SPK.init = function(wrapper) {
 
     // get those elements in place, you cunt
-    HTML.wrapper = $(wrapper);
-    HTML.canvas  = $(wrapper).find("#spk-canvas");
-    HTML.sidebar = $(wrapper).find("#spk-sidebar");
-    HTML.sliders = $(HTML.sidebar).find("#spk-sliders");
-    HTML.meta = $(HTML.sidebar).find("#spk-metadata");
+    SPK.HMTL.wrapper = $(wrapper);
+    SPK.HMTL.canvas  = $(wrapper).find("#spk-canvas");
+    SPK.HMTL.sidebar = $(wrapper).find("#spk-sidebar");
+    SPK.HMTL.sliders = $(SPK.HMTL.sidebar).find("#spk-sliders");
+    SPK.HMTL.meta = $(SPK.HMTL.sidebar).find("#spk-metadata");
 
-    // make the scene + renderer
-    // not sure if it's a logical place to put it
+    // need to init scene before: 
+    // make scene > load static  & first instance (into scene) > 
+    // > compute bounding box > setup environment > renderloop
     
-    VIEWER.scene = new THREE.Scene();
-
-    VIEWER.renderer = new THREE.WebGLRenderer( { antialias : true, alpha : true } );
-
-    VIEWER.renderer.setClearColor( 0xFFFFFF ); 
-
-    VIEWER.renderer.setPixelRatio( window.devicePixelRatio );
+    SPK.VIEWER.scene = new THREE.Scene();
     
-    VIEWER.renderer.setSize( $(HTML.canvas).width(), $(HTML.canvas).height() ); 
-
-    VIEWER.renderer.shadowMap.enabled = true;
+    // load parameters && go!
     
-    $(HTML.canvas).append( VIEWER.renderer.domElement );
+    SPK.loadParameters(function () {
 
-    VIEWER.renderer.setSize( $(HTML.canvas).width(), $(HTML.canvas).height() ); 
+      SPK.loadInstance(-1, function () {
+        
+        SPK.loadStaticInstance();
+        
+        SPK.setupEnvironment();
+      
+        SPK.render();
 
-    VIEWER.camera = new THREE.PerspectiveCamera( 40, $(HTML.canvas).width() * 1 / $(HTML.canvas).height(), 200 );
+      });      
 
-    VIEWER.camera.position.z = -200; VIEWER.camera.position.y = 200;
+    });
     
-    VIEWER.controls = new OrbitCtrls( VIEWER.camera, VIEWER.renderer.domElement );
-
-    // load parameters 
-    
-    SPK.loadParameters();
-
-    SPK.loadStaticInstance();
-
-    //SPK.loadInstance();
-    
-    SPK.render();
   }
 
   SPK.loadParameters = function(callback) {
@@ -49119,15 +50002,13 @@ var SPK = function () {
       
       for( var i = 0; i < params.length; i++ ) {
         
-        var sliderId = $(HTML.wrapper).attr("id") + "_parameter" + i;
+        var sliderId = $(SPK.HMTL.wrapper).attr("id") + "_parameter" + i;
 
-        $(HTML.sliders).append( $( "<div>", { id: sliderId, class: "parameter" } ) );
+        $(SPK.HMTL.sliders).append( $( "<div>", { id: sliderId, class: "parameter" } ) );
         
         $( "#" + sliderId ).append( "<p>" + params[i].name + "</p>" );
         
         $( "#" + sliderId ).append( $("<div>", { id: "slider"+i, class: "basic-slider" } ) );
-        
-        console.log(sliderId);
 
         var myRange = {}, norm = 100 / (params[i].values.length-1);
 
@@ -49158,27 +50039,41 @@ var SPK = function () {
 
         slider.on("slide", SPK.updateInstances);
 
-        GLOBALS.sliders.push(slider);
+        SPK.GLOBALS.sliders.push(slider);
       }
+
+      callback();
 
     });
 
   }
 
-  SPK.updateInstances = function () {
+  SPK.getCurrentKey = function () {
     
     var key = "";
 
-    for( var i = 0; i < GLOBALS.sliders.length; i++ ) {
+    for( var i = 0; i < SPK.GLOBALS.sliders.length; i++ ) {
 
-      key += Number( GLOBALS.sliders[i].get() ).toString() + ","; 
+      key += Number( SPK.GLOBALS.sliders[i].get() ).toString() + ","; 
 
     }
 
-    if(GLOBALS.currentKey === key) {
-      console.log("No key change needed");
+    return key;
+
+  }
+
+  SPK.updateInstances = function () {
+    
+    var key = SPK.getCurrentKey();
+
+    if(SPK.GLOBALS.currentKey === key) {
+    
+      console.warn("No key change needed");
+    
       return;
     }
+
+    SPK.GLOBALS.currentKey = key;
 
     // TODO: Implement cache
     // var myInstance = findInstance(key);
@@ -49186,7 +50081,7 @@ var SPK = function () {
 
     if(myInstance === null) {
 
-      SPK.loadInstance(key);
+      SPK.loadInstance( key, SPK.swapInstances() );
     
     } else {
 
@@ -49194,27 +50089,185 @@ var SPK = function () {
 
     }
 
-    GLOBALS.currentKey = key;
+  }
+
+  SPK.swapInstances = function () {
+    
+    var iin = [], out = [];
+
+    for(var i = 0; i < SPK.VIEWER.scene.children.length; i++ ) {
+
+      var myObj = SPK.VIEWER.scene.children[i];
+      
+      if( myObj.removable ) {
+        
+        if( myObj.instance === SPK.GLOBALS.currentKey ) {
+
+          iin.push(myObj);
+
+        } else {
+          
+          out.push(myObj);
+
+        }
+      }
+
+    }
+
+    SPK.swap(iin, out);
+
+  }
+
+  SPK.swap = function(iin, out) {
+    
+    var opacity = 1;
+    var duration = 600;
+
+    var tweenOut = new TWEEN.Tween( { x: opacity } )
+      .to( {x: 0}, duration )
+      .onUpdate( function() {
+
+        for( var i = 0; i < out.length; i++ ) {
+
+          out[i].material.opacity = this.x;
+
+        }
+
+      })
+      .onComplete( function() {
+
+        for( var i = 0; i < out.length; i++ ) {
+
+          SPK.VIEWER.scene.remove(out[i]);
+          out[i].geometry.dispose();
+          out[i].material.dispose();
+
+        }
+
+      });
+
+    var tweenIn = new TWEEN.Tween( { x : 0 } )
+      .to( { x: opacity }, duration )
+      .onUpdate( function() {
+        for( var i = 0; i < iin.length; i++ ) {
+
+          iin[i].material.opacity = this.x;
+
+        }
+      })
+      .onComplete( function() {
+
+      })
+
+    tweenIn.start();
+    tweenOut.start();
+    // not sure this is the right way
+
+  }
+
+  SPK.computeBoundingSphere = function() {
+
+    var geometry = new THREE.Geometry();
+
+    for(var i = 0; i < SPK.VIEWER.scene.children.length; i++) {
+
+      if(SPK.VIEWER.scene.children[i].selectable) {
+        
+        geometry.merge(SPK.VIEWER.scene.children[i].geometry);
+      
+      }
+    }
+
+    geometry.computeBoundingSphere();
+
+    SPK.GLOBALS.boundingSphere = geometry.boundingSphere;
+    
+    geometry.dispose();
 
   }
 
   SPK.setupEnvironment = function () {
+    // TODO: Grids, etc.
+    // 
+    // make the scene + renderer
+
+    SPK.VIEWER.renderer = new THREE.WebGLRenderer( { antialias : false, alpha: true} );
+
+    SPK.VIEWER.renderer.setClearColor( 0xF2F2F2 ); 
+
+    SPK.VIEWER.renderer.setPixelRatio( window.devicePixelRatio );
+    
+    SPK.VIEWER.renderer.setSize( $(SPK.HMTL.canvas).innerWidth(), $(SPK.HMTL.canvas).innerHeight() ); 
+
+    SPK.VIEWER.renderer.shadowMap.enabled = true;
+    
+    $(SPK.HMTL.canvas).append( SPK.VIEWER.renderer.domElement );
+
+    SPK.VIEWER.renderer.setSize( $(SPK.HMTL.canvas).innerWidth(), $(SPK.HMTL.canvas).innerHeight() ); 
+
+    SPK.VIEWER.camera = new THREE.PerspectiveCamera( 40, $(SPK.HMTL.canvas).innerWidth() * 1 / $(SPK.HMTL.canvas).innerHeight(), 1, SPK.GLOBALS.boundingSphere.radius * 100 );
+
+    SPK.VIEWER.camera.position.z = -SPK.GLOBALS.boundingSphere.radius*1.8; 
+
+    SPK.VIEWER.camera.position.y = SPK.GLOBALS.boundingSphere.radius*1.8;
+    
+    SPK.VIEWER.controls = new OrbitCtrls( SPK.VIEWER.camera, SPK.VIEWER.renderer.domElement );
+
+    // lights
+    
+    SPK.VIEWER.scene.add( new THREE.AmbientLight( 0xD8D8D8 ) );
+    /*
+    var flashlight = new THREE.SpotLight( 0xffffff, 13.2, 0, Math.PI/2, 10, 1 ); 
+    SPK.VIEWER.camera.add( flashlight );
+    flashlight.position.set( 0, 0, 0 );
+    flashlight.target = SPK.VIEWER.camera;
+    */
+   
+   var flashlight = new THREE.PointLight( 0xffffff, 1, SPK.GLOBALS.boundingSphere.radius*5, 1);
+   SPK.VIEWER.camera.add( flashlight );
+   SPK.VIEWER.scene.add( SPK.VIEWER.camera );
+    //SPK.VIEWER.scene.add( flashlight );
+  
+    // grids
+    
+    SPK.makeContext();
+
+    // resize events
+    
+    $(window).resize( function() { 
+      
+      SPK.VIEWER.renderer.setSize( $(SPK.HMTL.canvas).innerWidth()-1, $(SPK.HMTL.canvas).innerHeight()-5 ); 
+      
+      SPK.VIEWER.camera.aspect = ($(SPK.HMTL.canvas).innerWidth()-1) / ($(SPK.HMTL.canvas).innerHeight()-5);
+      
+      SPK.VIEWER.camera.updateProjectionMatrix();
+    
+    } );
 
   }
 
-  SPK.loadInstance = function(key) {
+  SPK.loadInstance = function(key, callback) {
     
+    key = key != -1 ? key : SPK.getCurrentKey();
+
     SPKLoader.load( "./testmodel/" + key + ".json", function (obj) {
-      console.log(obj);
+
       for( var i = 0; i < obj.geometries.length; i++ ) {
 
         SPKMaker.make( obj.geometries[i], key, function( obj ) { 
-          // TODO : Add to scene
-          VIEWER.scene.add(obj);
+        
+          SPK.VIEWER.scene.add(obj);
+
           // TODO : Add to cache
         });
 
       }
+
+      SPK.computeBoundingSphere();
+      
+      if( callback != undefined )
+
+        callback();
 
     });
 
@@ -49233,8 +50286,9 @@ var SPK = function () {
           
           obj.removable = false;
           
-          VIEWER.scene.add(obj);
-        
+          SPK.VIEWER.scene.add(obj);
+          
+
         });
 
       }
@@ -49247,27 +50301,49 @@ var SPK = function () {
 
     requestAnimationFrame( SPK.render );
     
-    VIEWER.renderer.render(VIEWER.scene, VIEWER.camera);
+    //SPK.updateTweens();
+    TWEEN.update();
+
+    SPK.VIEWER.renderer.render(SPK.VIEWER.scene, SPK.VIEWER.camera);
 
   }
 
-  SPK.testGeo = function() {
+  SPK.makeContext = function() {
 
-    var sphere = new THREE.Mesh( new THREE.IcosahedronGeometry( 50, 7 ), new THREE.MeshNormalMaterial( ) );
-    sphere.material.opacity = 0.3;
-    sphere.material.transparent = true;
-    VIEWER.scene.add( sphere );
+    var multiplier = 10;
 
+    var planeGeometry = new THREE.PlaneGeometry( SPK.GLOBALS.boundingSphere.radius * multiplier, SPK.GLOBALS.boundingSphere.radius * multiplier, 2, 2 ); //three.THREE.PlaneGeometry( width, depth, segmentsWidth, segmentsDepth );
+    planeGeometry.rotateX( - Math.PI / 2 );
+    var planeMaterial = new THREE.MeshBasicMaterial( { color: 0xEEEEEE } ); //0xEEEEEE #D7D7D7
+    plane = new THREE.Mesh( planeGeometry, planeMaterial );
+    plane.receiveShadow = true;
+    plane.position.set(SPK.GLOBALS.boundingSphere.center.x, 0,SPK.GLOBALS.boundingSphere.center.z );
+    plane.doNotRemove = true;
+
+    grid = new THREE.GridHelper( SPK.GLOBALS.boundingSphere.radius * multiplier, SPK.GLOBALS.boundingSphere.radius*multiplier/30);
+    grid.material.opacity = 0.15;
+    grid.material.transparent = true;
+    grid.position.set(SPK.GLOBALS.boundingSphere.center.x, 0, SPK.GLOBALS.boundingSphere.center.z );
+    grid.doNotRemove = true;
+    grid.setColors( 0x0000ff, 0x808080 ); 
+
+    //SPK.VIEWER.scene.add( plane );
+    SPK.VIEWER.scene.add( grid );
   }
 
-  SPK.changeInstance = function() {
 
-  }
+  /*************************************************
+  /   SPK INIT
+  *************************************************/
+    
+  SPK.init(wrapper);
 
 }
 
-module.exports = new SPK();
-},{"./SPKCache.js":6,"./SPKLoader.js":7,"./SPKObjectMaker.js":8,"jquery":1,"nouislider":2,"three":4,"three-orbit-controls":3}],6:[function(require,module,exports){
+module.exports = SPK;
+
+
+},{"./SPKCache.js":7,"./SPKLoader.js":8,"./SPKObjectMaker.js":9,"jquery":1,"nouislider":2,"three":4,"three-orbit-controls":3,"tween.js":5}],7:[function(require,module,exports){
 
 var SPKCache = function() {
   
@@ -49298,7 +50374,7 @@ var SPKCache = function() {
 }
 
 module.exports = new SPKCache();
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 
 /*
   Handles all json loading and parsing
@@ -49385,8 +50461,8 @@ var SPKLoader = function () {
             break;
             
           default : 
-            console.warn("Unsuported data type detected!");
-            console.log(data);
+            // console.warn("Unsuported data type detected!");
+            // console.log(data);
             break;
 
         }//end switch
@@ -49419,7 +50495,7 @@ var SPKLoader = function () {
 }
 
 module.exports = new SPKLoader();
-},{"three":4}],8:[function(require,module,exports){
+},{"three":4}],9:[function(require,module,exports){
 
 /*
   Makes THREE objects from THREE geometry, adding some sugar in between
@@ -49460,9 +50536,9 @@ var SPKObjectMaker = function() {
 
       SPKObjectMaker.makePoint( data, key, callback );
 
-    else 
+    else {}
 
-      console.warn( "ERR_MAKE: Unidentified type encountered: " + data.SPKLType );
+      //console.warn( "ERR_MAKE: Unidentified type encountered: " + data.SPKLType );
   }
 
   /**
@@ -49472,8 +50548,9 @@ var SPKObjectMaker = function() {
   SPKObjectMaker.makeMesh = function( data, key, callback ) {
 
     var material = new THREE.MeshPhongMaterial( { color: 0xdddddd, specular: 0xD1ECFF, shininess: 30, shading: THREE.FlatShading } );
+    //var material = new THREE.MeshNormalMaterial();
     
-    material.side = 2; material. transparent = true; 
+    material.side = THREE.DoubleSide; material.transparent = true; material.opacity = 1;
 
     var myObj = new THREE.Mesh(data, material);
     
@@ -49485,7 +50562,7 @@ var SPKObjectMaker = function() {
 
     myObj.instance = key;
 
-    var myEdges = new THREE.EdgesHelper( myObj, 0xFFFFFF, 45 );
+    var myEdges = new THREE.EdgesHelper( myObj, 0x4D4D4D, 45 );
     
     myEdges.removable = true; myEdges.material.transparent = true;
     
@@ -49531,7 +50608,7 @@ var SPKObjectMaker = function() {
 
   SPKObjectMaker.makePolyline = function( data, key, callback ) {
 
-    var material = new THREE.LineBasicMaterial( { color : 0x88FFE7 } );
+    var material = new THREE.LineBasicMaterial( { color : 0x24B9AC } );
     
     material.transparent = true;
 
@@ -49570,7 +50647,7 @@ var SPKObjectMaker = function() {
 }
 
 module.exports = new SPKObjectMaker();
-},{"three":4}],9:[function(require,module,exports){
+},{"three":4}],10:[function(require,module,exports){
 /**
  * 
  *
@@ -49580,15 +50657,16 @@ module.exports = new SPKObjectMaker();
  *
  */
 
-
 var $   = require('jquery'); 
 var SPK = require('./SPK.js');
 
 $( function() {
 
-  SPK.init( $( '#spk-viewer' ) );
+  var mySPK  = new SPK( $( '#spk-viewer' ) );
+
+  var mySPK2 = new SPK( $( '#spk-viewer2' ) );
 
 });
 
 
-},{"./SPK.js":5,"jquery":1}]},{},[9]);
+},{"./SPK.js":6,"jquery":1}]},{},[10]);

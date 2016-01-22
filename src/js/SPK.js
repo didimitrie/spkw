@@ -6,8 +6,9 @@ var noUISlider  = require('nouislider');
 var SPKLoader   = require('./SPKLoader.js');
 var SPKCache    = require('./SPKCache.js');
 var SPKMaker    = require('./SPKObjectMaker.js');
+var TWEEN       = require('tween.js');
 
-var SPK = function () {
+var SPK = function (wrapper) {
 
   /*************************************************
   /   SPK Global
@@ -16,10 +17,10 @@ var SPK = function () {
   var SPK = this;
   
   /*************************************************
-  /   SPK HTMLs
+  /   SPK SPK.HMTLs
   *************************************************/
 
-  var HTML = { 
+  SPK.HMTL = { 
     wrapper : "" , 
     canvas : "", 
     sidebar : "",
@@ -31,16 +32,18 @@ var SPK = function () {
   /   SPK Vars
   *************************************************/
 
-  var GLOBALS = {
+  SPK.GLOBALS = {
     sliders : [],
-    currentKey : ""
+    currentKey : "",
+    boundingSphere : "",
+    tweens : ""
   }
 
   /*************************************************
   /   THREE vars
   *************************************************/
 
-  var VIEWER = {
+  SPK.VIEWER = {
     renderer : null,
     camera : null,
     scene : null, 
@@ -61,46 +64,34 @@ var SPK = function () {
   SPK.init = function(wrapper) {
 
     // get those elements in place, you cunt
-    HTML.wrapper = $(wrapper);
-    HTML.canvas  = $(wrapper).find("#spk-canvas");
-    HTML.sidebar = $(wrapper).find("#spk-sidebar");
-    HTML.sliders = $(HTML.sidebar).find("#spk-sliders");
-    HTML.meta = $(HTML.sidebar).find("#spk-metadata");
+    SPK.HMTL.wrapper = $(wrapper);
+    SPK.HMTL.canvas  = $(wrapper).find("#spk-canvas");
+    SPK.HMTL.sidebar = $(wrapper).find("#spk-sidebar");
+    SPK.HMTL.sliders = $(SPK.HMTL.sidebar).find("#spk-sliders");
+    SPK.HMTL.meta = $(SPK.HMTL.sidebar).find("#spk-metadata");
 
-    // make the scene + renderer
-    // not sure if it's a logical place to put it
+    // need to init scene before: 
+    // make scene > load static  & first instance (into scene) > 
+    // > compute bounding box > setup environment > renderloop
     
-    VIEWER.scene = new THREE.Scene();
-
-    VIEWER.renderer = new THREE.WebGLRenderer( { antialias : true, alpha : true } );
-
-    VIEWER.renderer.setClearColor( 0xFFFFFF ); 
-
-    VIEWER.renderer.setPixelRatio( window.devicePixelRatio );
+    SPK.VIEWER.scene = new THREE.Scene();
     
-    VIEWER.renderer.setSize( $(HTML.canvas).width(), $(HTML.canvas).height() ); 
-
-    VIEWER.renderer.shadowMap.enabled = true;
+    // load parameters && go!
     
-    $(HTML.canvas).append( VIEWER.renderer.domElement );
+    SPK.loadParameters(function () {
 
-    VIEWER.renderer.setSize( $(HTML.canvas).width(), $(HTML.canvas).height() ); 
+      SPK.loadInstance(-1, function () {
+        
+        SPK.loadStaticInstance();
+        
+        SPK.setupEnvironment();
+      
+        SPK.render();
 
-    VIEWER.camera = new THREE.PerspectiveCamera( 40, $(HTML.canvas).width() * 1 / $(HTML.canvas).height(), 200 );
+      });      
 
-    VIEWER.camera.position.z = -200; VIEWER.camera.position.y = 200;
+    });
     
-    VIEWER.controls = new OrbitCtrls( VIEWER.camera, VIEWER.renderer.domElement );
-
-    // load parameters 
-    
-    SPK.loadParameters();
-
-    SPK.loadStaticInstance();
-
-    //SPK.loadInstance();
-    
-    SPK.render();
   }
 
   SPK.loadParameters = function(callback) {
@@ -111,15 +102,13 @@ var SPK = function () {
       
       for( var i = 0; i < params.length; i++ ) {
         
-        var sliderId = $(HTML.wrapper).attr("id") + "_parameter" + i;
+        var sliderId = $(SPK.HMTL.wrapper).attr("id") + "_parameter" + i;
 
-        $(HTML.sliders).append( $( "<div>", { id: sliderId, class: "parameter" } ) );
+        $(SPK.HMTL.sliders).append( $( "<div>", { id: sliderId, class: "parameter" } ) );
         
         $( "#" + sliderId ).append( "<p>" + params[i].name + "</p>" );
         
         $( "#" + sliderId ).append( $("<div>", { id: "slider"+i, class: "basic-slider" } ) );
-        
-        console.log(sliderId);
 
         var myRange = {}, norm = 100 / (params[i].values.length-1);
 
@@ -150,27 +139,41 @@ var SPK = function () {
 
         slider.on("slide", SPK.updateInstances);
 
-        GLOBALS.sliders.push(slider);
+        SPK.GLOBALS.sliders.push(slider);
       }
+
+      callback();
 
     });
 
   }
 
-  SPK.updateInstances = function () {
+  SPK.getCurrentKey = function () {
     
     var key = "";
 
-    for( var i = 0; i < GLOBALS.sliders.length; i++ ) {
+    for( var i = 0; i < SPK.GLOBALS.sliders.length; i++ ) {
 
-      key += Number( GLOBALS.sliders[i].get() ).toString() + ","; 
+      key += Number( SPK.GLOBALS.sliders[i].get() ).toString() + ","; 
 
     }
 
-    if(GLOBALS.currentKey === key) {
-      console.log("No key change needed");
+    return key;
+
+  }
+
+  SPK.updateInstances = function () {
+    
+    var key = SPK.getCurrentKey();
+
+    if(SPK.GLOBALS.currentKey === key) {
+    
+      console.warn("No key change needed");
+    
       return;
     }
+
+    SPK.GLOBALS.currentKey = key;
 
     // TODO: Implement cache
     // var myInstance = findInstance(key);
@@ -178,7 +181,7 @@ var SPK = function () {
 
     if(myInstance === null) {
 
-      SPK.loadInstance(key);
+      SPK.loadInstance( key, SPK.swapInstances() );
     
     } else {
 
@@ -186,27 +189,185 @@ var SPK = function () {
 
     }
 
-    GLOBALS.currentKey = key;
+  }
+
+  SPK.swapInstances = function () {
+    
+    var iin = [], out = [];
+
+    for(var i = 0; i < SPK.VIEWER.scene.children.length; i++ ) {
+
+      var myObj = SPK.VIEWER.scene.children[i];
+      
+      if( myObj.removable ) {
+        
+        if( myObj.instance === SPK.GLOBALS.currentKey ) {
+
+          iin.push(myObj);
+
+        } else {
+          
+          out.push(myObj);
+
+        }
+      }
+
+    }
+
+    SPK.swap(iin, out);
+
+  }
+
+  SPK.swap = function(iin, out) {
+    
+    var opacity = 1;
+    var duration = 600;
+
+    var tweenOut = new TWEEN.Tween( { x: opacity } )
+      .to( {x: 0}, duration )
+      .onUpdate( function() {
+
+        for( var i = 0; i < out.length; i++ ) {
+
+          out[i].material.opacity = this.x;
+
+        }
+
+      })
+      .onComplete( function() {
+
+        for( var i = 0; i < out.length; i++ ) {
+
+          SPK.VIEWER.scene.remove(out[i]);
+          out[i].geometry.dispose();
+          out[i].material.dispose();
+
+        }
+
+      });
+
+    var tweenIn = new TWEEN.Tween( { x : 0 } )
+      .to( { x: opacity }, duration )
+      .onUpdate( function() {
+        for( var i = 0; i < iin.length; i++ ) {
+
+          iin[i].material.opacity = this.x;
+
+        }
+      })
+      .onComplete( function() {
+
+      })
+
+    tweenIn.start();
+    tweenOut.start();
+    // not sure this is the right way
+
+  }
+
+  SPK.computeBoundingSphere = function() {
+
+    var geometry = new THREE.Geometry();
+
+    for(var i = 0; i < SPK.VIEWER.scene.children.length; i++) {
+
+      if(SPK.VIEWER.scene.children[i].selectable) {
+        
+        geometry.merge(SPK.VIEWER.scene.children[i].geometry);
+      
+      }
+    }
+
+    geometry.computeBoundingSphere();
+
+    SPK.GLOBALS.boundingSphere = geometry.boundingSphere;
+    
+    geometry.dispose();
 
   }
 
   SPK.setupEnvironment = function () {
+    // TODO: Grids, etc.
+    // 
+    // make the scene + renderer
+
+    SPK.VIEWER.renderer = new THREE.WebGLRenderer( { antialias : false, alpha: true} );
+
+    SPK.VIEWER.renderer.setClearColor( 0xF2F2F2 ); 
+
+    SPK.VIEWER.renderer.setPixelRatio( window.devicePixelRatio );
+    
+    SPK.VIEWER.renderer.setSize( $(SPK.HMTL.canvas).innerWidth(), $(SPK.HMTL.canvas).innerHeight() ); 
+
+    SPK.VIEWER.renderer.shadowMap.enabled = true;
+    
+    $(SPK.HMTL.canvas).append( SPK.VIEWER.renderer.domElement );
+
+    SPK.VIEWER.renderer.setSize( $(SPK.HMTL.canvas).innerWidth(), $(SPK.HMTL.canvas).innerHeight() ); 
+
+    SPK.VIEWER.camera = new THREE.PerspectiveCamera( 40, $(SPK.HMTL.canvas).innerWidth() * 1 / $(SPK.HMTL.canvas).innerHeight(), 1, SPK.GLOBALS.boundingSphere.radius * 100 );
+
+    SPK.VIEWER.camera.position.z = -SPK.GLOBALS.boundingSphere.radius*1.8; 
+
+    SPK.VIEWER.camera.position.y = SPK.GLOBALS.boundingSphere.radius*1.8;
+    
+    SPK.VIEWER.controls = new OrbitCtrls( SPK.VIEWER.camera, SPK.VIEWER.renderer.domElement );
+
+    // lights
+    
+    SPK.VIEWER.scene.add( new THREE.AmbientLight( 0xD8D8D8 ) );
+    /*
+    var flashlight = new THREE.SpotLight( 0xffffff, 13.2, 0, Math.PI/2, 10, 1 ); 
+    SPK.VIEWER.camera.add( flashlight );
+    flashlight.position.set( 0, 0, 0 );
+    flashlight.target = SPK.VIEWER.camera;
+    */
+   
+   var flashlight = new THREE.PointLight( 0xffffff, 1, SPK.GLOBALS.boundingSphere.radius*5, 1);
+   SPK.VIEWER.camera.add( flashlight );
+   SPK.VIEWER.scene.add( SPK.VIEWER.camera );
+    //SPK.VIEWER.scene.add( flashlight );
+  
+    // grids
+    
+    SPK.makeContext();
+
+    // resize events
+    
+    $(window).resize( function() { 
+      
+      SPK.VIEWER.renderer.setSize( $(SPK.HMTL.canvas).innerWidth()-1, $(SPK.HMTL.canvas).innerHeight()-5 ); 
+      
+      SPK.VIEWER.camera.aspect = ($(SPK.HMTL.canvas).innerWidth()-1) / ($(SPK.HMTL.canvas).innerHeight()-5);
+      
+      SPK.VIEWER.camera.updateProjectionMatrix();
+    
+    } );
 
   }
 
-  SPK.loadInstance = function(key) {
+  SPK.loadInstance = function(key, callback) {
     
+    key = key != -1 ? key : SPK.getCurrentKey();
+
     SPKLoader.load( "./testmodel/" + key + ".json", function (obj) {
-      console.log(obj);
+
       for( var i = 0; i < obj.geometries.length; i++ ) {
 
         SPKMaker.make( obj.geometries[i], key, function( obj ) { 
-          // TODO : Add to scene
-          VIEWER.scene.add(obj);
+        
+          SPK.VIEWER.scene.add(obj);
+
           // TODO : Add to cache
         });
 
       }
+
+      SPK.computeBoundingSphere();
+      
+      if( callback != undefined )
+
+        callback();
 
     });
 
@@ -225,8 +386,9 @@ var SPK = function () {
           
           obj.removable = false;
           
-          VIEWER.scene.add(obj);
-        
+          SPK.VIEWER.scene.add(obj);
+          
+
         });
 
       }
@@ -239,23 +401,44 @@ var SPK = function () {
 
     requestAnimationFrame( SPK.render );
     
-    VIEWER.renderer.render(VIEWER.scene, VIEWER.camera);
+    //SPK.updateTweens();
+    TWEEN.update();
+
+    SPK.VIEWER.renderer.render(SPK.VIEWER.scene, SPK.VIEWER.camera);
 
   }
 
-  SPK.testGeo = function() {
+  SPK.makeContext = function() {
 
-    var sphere = new THREE.Mesh( new THREE.IcosahedronGeometry( 50, 7 ), new THREE.MeshNormalMaterial( ) );
-    sphere.material.opacity = 0.3;
-    sphere.material.transparent = true;
-    VIEWER.scene.add( sphere );
+    var multiplier = 10;
 
+    var planeGeometry = new THREE.PlaneGeometry( SPK.GLOBALS.boundingSphere.radius * multiplier, SPK.GLOBALS.boundingSphere.radius * multiplier, 2, 2 ); //three.THREE.PlaneGeometry( width, depth, segmentsWidth, segmentsDepth );
+    planeGeometry.rotateX( - Math.PI / 2 );
+    var planeMaterial = new THREE.MeshBasicMaterial( { color: 0xEEEEEE } ); //0xEEEEEE #D7D7D7
+    plane = new THREE.Mesh( planeGeometry, planeMaterial );
+    plane.receiveShadow = true;
+    plane.position.set(SPK.GLOBALS.boundingSphere.center.x, 0,SPK.GLOBALS.boundingSphere.center.z );
+    plane.doNotRemove = true;
+
+    grid = new THREE.GridHelper( SPK.GLOBALS.boundingSphere.radius * multiplier, SPK.GLOBALS.boundingSphere.radius*multiplier/30);
+    grid.material.opacity = 0.15;
+    grid.material.transparent = true;
+    grid.position.set(SPK.GLOBALS.boundingSphere.center.x, 0, SPK.GLOBALS.boundingSphere.center.z );
+    grid.doNotRemove = true;
+    grid.setColors( 0x0000ff, 0x808080 ); 
+
+    //SPK.VIEWER.scene.add( plane );
+    SPK.VIEWER.scene.add( grid );
   }
 
-  SPK.changeInstance = function() {
 
-  }
+  /*************************************************
+  /   SPK INIT
+  *************************************************/
+    
+  SPK.init(wrapper);
 
 }
 
-module.exports = new SPK();
+module.exports = SPK;
+

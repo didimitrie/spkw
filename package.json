@@ -7,7 +7,7 @@
   "license": "GPL-2.0",
   "scripts": {
     "watch-sass": "sass --watch src/sass/app.scss:dist/css/app.css",
-    "watch-jade": "jade --watch src/jade/index.jade -o dist/ -P",
+    "watch-jade": "jade --watch src/jade/*.jade -o dist/ -P",
     "build-js": "browserify src/js/app.js -o dist/js/app.js",
     "watch-js": "nodemon -e js -w src/js -x 'npm run build-js'",
     "serve-local": "http-server -p 1337 -c-1",
@@ -18,7 +18,8 @@
     "jquery": "^2.2.0",
     "nouislider": "github:leongersen/noUiSlider",
     "three": "^0.73.2",
-    "three-orbit-controls": "^72.0.0"
+    "three-orbit-controls": "^72.0.0",
+    "tween.js": "^16.3.4"
   },
   "devDependencies": {
     "watchify": "^3.7.0"

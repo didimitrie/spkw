@@ -1,3 +1,6 @@
+
+//@import 'variables';
+
 .noUi-target,
 .noUi-target * {
 -webkit-touch-callout: none;
@@ -54,17 +57,17 @@
 /* Slider size and handle placement;
  */
 .noUi-horizontal {
-  height:20px;
+  height:10px;
 }
 .noUi-horizontal .noUi-handle {
   width: 20px;
   height: 20px;
   left: -11px;
-  top: 0px;
+  top: -5px;
 
   -webkit-box-shadow: 0px 0px 62px 1px rgba(255,255,255,1);
--moz-box-shadow: 0px 0px 62px 1px rgba(255,255,255,1);
-box-shadow: 0px 0px 62px 1px rgba(255,255,255,1);
+  -moz-box-shadow: 0px 0px 62px 1px rgba(255,255,255,1);
+  box-shadow: 0px 0px 62px 1px rgba(255,255,255,1);
 }
 .noUi-vertical {
   width: 18px;
@@ -79,7 +82,7 @@ box-shadow: 0px 0px 62px 1px rgba(255,255,255,1);
 /* Styling;
  */
 .noUi-background {
-  background: #B8B8B8;
+  background: #D8D8D8;
   
 }
 .noUi-connect {
@@ -104,24 +107,14 @@ box-shadow: 0px 0px 62px 1px rgba(255,255,255,1);
 }
 .noUi-handle {
   border-radius:15px;
-  background: #FFFFFF;
+  background: #B9B9B9;
   cursor: default;
 }
 .noUi-active {
 }
 
-/* Handle stripes;
- */
-.noUi-handle:before,
-.noUi-handle:after {
-
-}
 .noUi-handle:after {
   left: 17px;
-}
-.noUi-vertical .noUi-handle:before,
-.noUi-vertical .noUi-handle:after {
-
 }
 .noUi-vertical .noUi-handle:after {
   top: 17px;
@@ -181,7 +174,8 @@ box-shadow: 0px 0px 62px 1px rgba(255,255,255,1);
   width: 40px;
   position: absolute;
   text-align: center;
-  color:#FFFFFF;
+  color:$txtColour;
+  font-size: x-small;
 }
 .noUi-value-sub {
   color: #ccc;
@@ -193,7 +187,7 @@ box-shadow: 0px 0px 62px 1px rgba(255,255,255,1);
  */
 .noUi-marker {
   position: absolute;
-  background: #CCC;
+  background: #545454;
 }
 .noUi-marker-sub {
   background: #AAA;
