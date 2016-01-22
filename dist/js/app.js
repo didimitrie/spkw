@@ -49069,6 +49069,7 @@ var SPK = function () {
   SPK.init = function(wrapper) {
 
     // get those elements in place, you cunt
+    HTML.wrapper = $(wrapper);
     HTML.canvas  = $(wrapper).find("#spk-canvas");
     HTML.sidebar = $(wrapper).find("#spk-sidebar");
     HTML.sliders = $(HTML.sidebar).find("#spk-sliders");
@@ -49104,9 +49105,8 @@ var SPK = function () {
     SPK.loadParameters();
 
     SPK.loadStaticInstance();
-    //SPK.loadInstance();
 
-    SPK.testGeo();
+    //SPK.loadInstance();
     
     SPK.render();
   }
@@ -49119,12 +49119,16 @@ var SPK = function () {
       
       for( var i = 0; i < params.length; i++ ) {
         
-        $(HTML.sliders).append($("<div>", {id : "parameter" + i, class : "parameter"}));
+        var sliderId = $(HTML.wrapper).attr("id") + "_parameter" + i;
+
+        $(HTML.sliders).append( $( "<div>", { id: sliderId, class: "parameter" } ) );
         
-        $("#parameter"+i).append("<p>" + params[i].name + "</p>");
+        $( "#" + sliderId ).append( "<p>" + params[i].name + "</p>" );
         
-        $("#parameter"+i).append($("<div>", {id: "slider"+i, class: "basic-slider"}));
-      
+        $( "#" + sliderId ).append( $("<div>", { id: "slider"+i, class: "basic-slider" } ) );
+        
+        console.log(sliderId);
+
         var myRange = {}, norm = 100 / (params[i].values.length-1);
 
         for( var j = 0; j < params[i].values.length; j++ ) {
@@ -49137,7 +49141,7 @@ var SPK = function () {
       
         myRange["max"] = myRange["100%"]; delete  myRange["100%"];
 
-        var sliderElem = $("#slider" + i)[0];
+        var sliderElem = $( "#" + sliderId ).find("#slider" + i)[0];
         
         var slider = noUISlider.create( sliderElem, {
           start : [0],
@@ -49244,7 +49248,7 @@ var SPK = function () {
     requestAnimationFrame( SPK.render );
     
     VIEWER.renderer.render(VIEWER.scene, VIEWER.camera);
-    
+
   }
 
   SPK.testGeo = function() {
@@ -49579,7 +49583,6 @@ module.exports = new SPKObjectMaker();
 
 var $   = require('jquery'); 
 var SPK = require('./SPK.js');
-var OTS = require('./SPK.js');
 
 $( function() {
 

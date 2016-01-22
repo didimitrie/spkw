@@ -10,7 +10,6 @@
 
 var $   = require('jquery'); 
 var SPK = require('./SPK.js');
-var OTS = require('./SPK.js');
 
 $( function() {
 
