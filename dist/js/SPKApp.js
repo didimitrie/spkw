@@ -50039,7 +50039,7 @@ var SPK = function (wrapper) {
 
         // set the callbacks
 
-        slider.on("slide", SPK.updateInstances);
+        //slider.on("slide", SPK.updateInstances);
 
         slider.on("end", SPK.updateInstances);
 
@@ -50260,7 +50260,7 @@ var SPK = function (wrapper) {
       for( var i = 0; i < obj.geometries.length; i++ ) {
 
         SPKMaker.make( obj.geometries[i], key, function( obj ) { 
-        
+          
           SPK.VIEWER.scene.add(obj);
 
           // TODO : Add to cache
@@ -50348,7 +50348,27 @@ var SPK = function (wrapper) {
 module.exports = SPK;
 
 
-},{"./SPKCache.js":7,"./SPKLoader.js":8,"./SPKObjectMaker.js":9,"jquery":1,"nouislider":2,"three":4,"three-orbit-controls":3,"tween.js":5}],7:[function(require,module,exports){
+},{"./SPKCache.js":8,"./SPKLoader.js":9,"./SPKObjectMaker.js":10,"jquery":1,"nouislider":2,"three":4,"three-orbit-controls":3,"tween.js":5}],7:[function(require,module,exports){
+/**
+ * 
+ *
+ *  Welcome. This here is maybe a messy code, but hopefully it will work. 
+ *  (c) 2016 Dimitrie A. Stefanescu
+ *
+ *
+ */
+
+var $   = require('jquery'); 
+var SPK = require('./SPK.js');
+
+$( function() {
+
+  var mySPK  = new SPK( $( '#spk-viewer' ) );
+
+});
+
+
+},{"./SPK.js":6,"jquery":1}],8:[function(require,module,exports){
 
 var SPKCache = function() {
   
@@ -50379,7 +50399,7 @@ var SPKCache = function() {
 }
 
 module.exports = new SPKCache();
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 /*
   Handles all json loading and parsing
@@ -50500,7 +50520,7 @@ var SPKLoader = function () {
 }
 
 module.exports = new SPKLoader();
-},{"three":4}],9:[function(require,module,exports){
+},{"three":4}],10:[function(require,module,exports){
 
 /*
   Makes THREE objects from THREE geometry, adding some sugar in between
@@ -50652,26 +50672,4 @@ var SPKObjectMaker = function() {
 }
 
 module.exports = new SPKObjectMaker();
-},{"three":4}],10:[function(require,module,exports){
-/**
- * 
- *
- *  Welcome. This here is maybe a messy code, but hopefully it will work. 
- *  (c) 2016 Dimitrie A. Stefanescu
- *
- *
- */
-
-var $   = require('jquery'); 
-var SPK = require('./SPK.js');
-
-$( function() {
-
-  var mySPK  = new SPK( $( '#spk-viewer' ) );
-
-  var mySPK2 = new SPK( $( '#spk-viewer2' ) );
-
-});
-
-
-},{"./SPK.js":6,"jquery":1}]},{},[10]);
+},{"three":4}]},{},[7]);

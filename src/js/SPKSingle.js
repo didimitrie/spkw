@@ -14,7 +14,5 @@ $( function() {
 
   var mySPK  = new SPK( $( '#spk-viewer' ) );
 
-  var mySPK2 = new SPK( $( '#spk-viewer2' ) );
-
 });
 

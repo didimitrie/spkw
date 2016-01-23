@@ -139,7 +139,7 @@ var SPK = function (wrapper) {
 
         // set the callbacks
 
-        slider.on("slide", SPK.updateInstances);
+        //slider.on("slide", SPK.updateInstances);
 
         slider.on("end", SPK.updateInstances);
 
@@ -360,7 +360,7 @@ var SPK = function (wrapper) {
       for( var i = 0; i < obj.geometries.length; i++ ) {
 
         SPKMaker.make( obj.geometries[i], key, function( obj ) { 
-        
+          
           SPK.VIEWER.scene.add(obj);
 
           // TODO : Add to cache
