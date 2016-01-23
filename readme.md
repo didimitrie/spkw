@@ -1,4 +1,19 @@
-Future.Speckle
+#SPKW
+Parametric model explorer based on on webgl (threejs)
+
+### Install
+
+Install first: npm install 
+Pop it in the browser: npm run watch
+
+### TODO:
+
+All the docs. Yay! 
+
+### License
+
+**GNU GPL v3.0**
+
 Copyright (C) 2016 Dimitrie Andrei Stefanescu
 
 This program is free software; you can redistribute it and/or modify
