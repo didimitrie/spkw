@@ -49914,6 +49914,7 @@ var SPKLoader   = require('./SPKLoader.js');
 var SPKCache    = require('./SPKCache.js');
 var SPKMaker    = require('./SPKObjectMaker.js');
 var SPKSync     = require('./SPKSync.js');
+var SPKConfig   = require('./SPKConfig.js');
 
 var SPK = function (wrapper) {
 
@@ -50358,7 +50359,8 @@ var SPK = function (wrapper) {
   *************************************************/
 
   SPK.alignSliders = function () {
-    
+    //var containerHeight = $(SPK.HTML.sidebar).innerHeight(); console.log(containerHeight + " <-th");
+    var wrapperHeight = $(SPK.HTML.wrapper).height(); console.log(wrapperHeight + " <-th");
   }
 
   SPK.beep = function () {
@@ -50379,7 +50381,7 @@ var SPK = function (wrapper) {
 module.exports = SPK;
 
 
-},{"./SPKCache.js":7,"./SPKLoader.js":9,"./SPKObjectMaker.js":10,"./SPKSync.js":11,"jquery":1,"nouislider":2,"three":4,"three-orbit-controls":3,"tween.js":5}],7:[function(require,module,exports){
+},{"./SPKCache.js":7,"./SPKConfig.js":8,"./SPKLoader.js":10,"./SPKObjectMaker.js":11,"./SPKSync.js":12,"jquery":1,"nouislider":2,"three":4,"three-orbit-controls":3,"tween.js":5}],7:[function(require,module,exports){
 
 var SPKCache = function() {
   
@@ -50411,6 +50413,18 @@ var SPKCache = function() {
 
 module.exports = new SPKCache();
 },{}],8:[function(require,module,exports){
+
+var SPKConfig = function () {
+
+  var SPKConfig = this;
+
+  SPKConfig.SERVER = "http://localhost:8000/api/";
+  SPKConfig.APPID  = "SPKWOfficial";
+
+}
+
+module.exports = new SPKConfig();
+},{}],9:[function(require,module,exports){
 /**
  * 
  *
@@ -50432,7 +50446,7 @@ $( function() {
 });
 
 
-},{"./SPK.js":6,"jquery":1}],9:[function(require,module,exports){
+},{"./SPK.js":6,"jquery":1}],10:[function(require,module,exports){
 
 /*
   Handles all json loading and parsing
@@ -50553,7 +50567,7 @@ var SPKLoader = function () {
 }
 
 module.exports = new SPKLoader();
-},{"three":4}],10:[function(require,module,exports){
+},{"three":4}],11:[function(require,module,exports){
 
 /*
   Makes THREE objects from THREE geometry, adding some sugar in between
@@ -50705,7 +50719,7 @@ var SPKObjectMaker = function() {
 }
 
 module.exports = new SPKObjectMaker();
-},{"three":4}],11:[function(require,module,exports){
+},{"three":4}],12:[function(require,module,exports){
 
 var SPKSync = function (spkInstances) {
 
@@ -50745,4 +50759,4 @@ var SPKSync = function (spkInstances) {
 }
 
 module.exports = new SPKSync();
-},{}]},{},[8]);
+},{}]},{},[9]);

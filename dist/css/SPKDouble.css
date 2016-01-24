@@ -343,6 +343,9 @@ p.parameter_name {
   float: left;
   margin-top: 10px; }
 
+.text-center {
+  text-align: center; }
+
 .blue {
   color: #0000FF; }
 

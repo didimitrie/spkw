@@ -343,6 +343,9 @@ p.parameter_name {
   float: left;
   margin-top: 10px; }
 
+.text-center {
+  text-align: center; }
+
 .blue {
   color: #0000FF; }
 
@@ -384,5 +387,10 @@ p.parameter_name {
   width: 70%;
   height: 100%;
   z-index: 1; }
+
+#wrapper-params {
+  position: absolute;
+  width: 90%;
+  box-sizing: border-box; }
 
 /*# sourceMappingURL=SPKSingle.css.map */
