@@ -49993,6 +49993,8 @@ var SPK = function (wrapper) {
     
     // load parameters && go!
     
+    SPK.getModelMeta();
+
     SPK.loadParameters(function () {
 
       SPK.loadInstance(-1, function () {
@@ -50012,6 +50014,15 @@ var SPK = function (wrapper) {
       });      
 
     });
+
+  }
+
+  SPK.getModelMeta = function(callback) {
+
+
+    $.getJSON(SPKConfig.GEOMAPI + "?mn=VkCWKlR_l", function (data) {
+      console.log(data);
+    })
 
   }
 
@@ -50359,8 +50370,17 @@ var SPK = function (wrapper) {
   *************************************************/
 
   SPK.alignSliders = function () {
-    //var containerHeight = $(SPK.HTML.sidebar).innerHeight(); console.log(containerHeight + " <-th");
-    var wrapperHeight = $(SPK.HTML.wrapper).height(); console.log(wrapperHeight + " <-th");
+    var containerHeight = $(SPK.HMTL.sidebar).innerHeight(); 
+    console.log(containerHeight + " <-th");
+    
+    var wrapperHeight = $(SPK.HMTL.sidebar).find("#wrapper-params").height(); 
+    console.log(wrapperHeight + " <-th");
+
+    var diff = containerHeight - wrapperHeight;
+    console.log(diff)
+    if( diff > 0 ) {
+      $(SPK.HMTL.sidebar).find("#wrapper-params").css("top", diff/2 + "px");
+    }
   }
 
   SPK.beep = function () {
@@ -50418,8 +50438,8 @@ var SPKConfig = function () {
 
   var SPKConfig = this;
 
-  SPKConfig.SERVER = "http://localhost:8000/api/";
-  SPKConfig.APPID  = "SPKWOfficial";
+  SPKConfig.GEOMAPI    = "http://localhost:8000/api/";
+  SPKConfig.APPID      = "SPKWOfficial";
 
 }
 
@@ -50441,7 +50461,6 @@ $( function() {
 
   var mySPK1  = new SPK( $( '#spk-viewer-1' ) );
   var mySPK2  = new SPK( $( '#spk-viewer-2' ) );
-  //var mySPK2  = new SPK( $( '#spk-viewer-3' ) );
 
 });
 
