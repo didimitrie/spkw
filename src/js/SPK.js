@@ -100,7 +100,7 @@ var SPK = function (wrapper) {
     });
     
     SPKSync.addInstance(SPK);
-    
+
   }
 
   SPK.loadParameters = function(callback) {
@@ -152,7 +152,7 @@ var SPK = function (wrapper) {
 
         slider.on("slide", SPK.updateInstances);
 
-        //slider.on("end", SPK.updateInstances);
+        slider.on("change", SPK.updateInstances);
 
         // add to master
 

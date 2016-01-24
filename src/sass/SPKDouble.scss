@@ -1,33 +1,28 @@
 
 @import 'app';
 
+::-webkit-scrollbar { 
+    display: none; 
+}
+
 #spk-viewer-1 {
   position: absolute;
   top: 0;
   left: 0;
-  width: 33%;
+  width: 50%;
   height: 100%;
 }
 
 #spk-viewer-2 {
   position: absolute;
   top: 0;
-  left: 33%;
-  width: 33%;
+  left: 50%;
+  width: 50%;
   height: 100%;
   border-left: 1px dashed gray;
   box-sizing: border-box;
 }
 
-#spk-viewer-3 {
-  position: absolute;
-  top: 0;
-  left: 66%;
-  width: 33%;
-  height: 100%;
-  border-left: 1px dashed gray;
-  box-sizing: border-box;
-}
 
 #spk-sidebar {
   position: absolute;
@@ -38,8 +33,20 @@
   background-color: rgba(255, 255, 255, 0.8);
   z-index: 2;
   box-sizing: border-box;
-  padding: 60px;
+  padding: 20px 60px;
   overflow: auto;
+}
+
+#spk-sidebar p {
+  display: inline-block;
+  width: 25%;
+  float: left;
+  margin-top: 10px;
+}
+
+.basic-slider {
+  width: 75%;
+  display: inline-block;
 }
 
 #spk-canvas {
