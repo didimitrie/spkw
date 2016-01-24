@@ -1,12 +1,19 @@
 
+// (C) 2016 Dimitrie A. Stefanescu
+// License: GNU GPL v3.0
+
+// general deps
 var $           = require('jquery');
 var THREE       = require('three');
 var OrbitCtrls  = require('three-orbit-controls')(THREE);
 var noUISlider  = require('nouislider');
+var TWEEN       = require('tween.js');
+
+// SPK Libs
 var SPKLoader   = require('./SPKLoader.js');
 var SPKCache    = require('./SPKCache.js');
 var SPKMaker    = require('./SPKObjectMaker.js');
-var TWEEN       = require('tween.js');
+var SPKSync     = require('./SPKSync.js');
 
 var SPK = function (wrapper) {
 
@@ -86,11 +93,13 @@ var SPK = function (wrapper) {
         
         SPK.setupEnvironment();
       
-        SPK.render();
+        SPK.render(); 
 
       });      
 
     });
+    
+    SPKSync.addInstance(SPK);
     
   }
 
@@ -102,13 +111,15 @@ var SPK = function (wrapper) {
       
       for( var i = 0; i < params.length; i++ ) {
         
-        var sliderId = $(SPK.HMTL.wrapper).attr("id") + "_parameter" + i;
+        var paramId = $(SPK.HMTL.wrapper).attr("id") + "_parameter_" + i;
 
-        $(SPK.HMTL.sliders).append( $( "<div>", { id: sliderId, class: "parameter" } ) );
+        $(SPK.HMTL.sliders).append( $( "<div>", { id: paramId, class: "parameter" } ) );
         
-        $( "#" + sliderId ).append( "<p>" + params[i].name + "</p>" );
+        $( "#" + paramId ).append( "<p>" + params[i].name + "</p>" );
         
-        $( "#" + sliderId ).append( $("<div>", { id: "slider"+i, class: "basic-slider" } ) );
+        var sliderId = paramId + "_slider_" + i;
+
+        $( "#" + paramId ).append( $("<div>", { id: sliderId, class: "basic-slider" } ) );
 
         var myRange = {}, norm = 100 / (params[i].values.length-1);
 
@@ -122,7 +133,7 @@ var SPK = function (wrapper) {
       
         myRange["max"] = myRange["100%"]; delete  myRange["100%"];
 
-        var sliderElem = $( "#" + sliderId ).find("#slider" + i)[0];
+        var sliderElem = $( "#" + sliderId )[0];
         
         var slider = noUISlider.create( sliderElem, {
           start : [0],
@@ -139,9 +150,9 @@ var SPK = function (wrapper) {
 
         // set the callbacks
 
-        //slider.on("slide", SPK.updateInstances);
+        slider.on("slide", SPK.updateInstances);
 
-        slider.on("end", SPK.updateInstances);
+        //slider.on("end", SPK.updateInstances);
 
         // add to master
 
@@ -318,21 +329,23 @@ var SPK = function (wrapper) {
     
     SPK.VIEWER.controls = new OrbitCtrls( SPK.VIEWER.camera, SPK.VIEWER.renderer.domElement );
 
+    SPK.VIEWER.controls.addEventListener( 'change', function () {
+
+      SPKSync.syncCamera(SPK.VIEWER.camera) ;
+
+    });
+
+
     // lights
     
     SPK.VIEWER.scene.add( new THREE.AmbientLight( 0xD8D8D8 ) );
-    /*
-    var flashlight = new THREE.SpotLight( 0xffffff, 13.2, 0, Math.PI/2, 10, 1 ); 
-    SPK.VIEWER.camera.add( flashlight );
-    flashlight.position.set( 0, 0, 0 );
-    flashlight.target = SPK.VIEWER.camera;
-    */
    
-   var flashlight = new THREE.PointLight( 0xffffff, 1, SPK.GLOBALS.boundingSphere.radius*5, 1);
-   SPK.VIEWER.camera.add( flashlight );
-   SPK.VIEWER.scene.add( SPK.VIEWER.camera );
-    //SPK.VIEWER.scene.add( flashlight );
-  
+    var flashlight = new THREE.PointLight( 0xffffff, 1, SPK.GLOBALS.boundingSphere.radius * 12, 1);
+    
+    SPK.VIEWER.camera.add( flashlight );
+    
+    SPK.VIEWER.scene.add( SPK.VIEWER.camera );
+
     // grids
     
     SPK.makeContext();
@@ -405,8 +418,7 @@ var SPK = function (wrapper) {
   SPK.render = function() {
 
     requestAnimationFrame( SPK.render );
-    
-    //SPK.updateTweens();
+
     TWEEN.update();
 
     SPK.VIEWER.renderer.render(SPK.VIEWER.scene, SPK.VIEWER.camera);
@@ -434,6 +446,13 @@ var SPK = function (wrapper) {
 
     //SPK.VIEWER.scene.add( plane );
     SPK.VIEWER.scene.add( grid );
+
+  }
+
+  SPK.beep = function () {
+
+    return "boop";
+
   }
 
 

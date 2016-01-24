@@ -1,4 +1,6 @@
+*.map
 .sass-cache
 node_modules
 dist/testmodel/
 dist/testmodel-2/
+dist/testmodel-3/

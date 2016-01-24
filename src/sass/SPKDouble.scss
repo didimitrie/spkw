@@ -1,18 +1,32 @@
 
+@import 'app';
+
 #spk-viewer-1 {
   position: absolute;
   top: 0;
   left: 0;
-  width: 50%;
+  width: 33%;
   height: 100%;
 }
 
 #spk-viewer-2 {
   position: absolute;
   top: 0;
-  left: 50%;
-  width: 50%;
+  left: 33%;
+  width: 33%;
   height: 100%;
+  border-left: 1px dashed gray;
+  box-sizing: border-box;
+}
+
+#spk-viewer-3 {
+  position: absolute;
+  top: 0;
+  left: 66%;
+  width: 33%;
+  height: 100%;
+  border-left: 1px dashed gray;
+  box-sizing: border-box;
 }
 
 #spk-sidebar {
@@ -24,10 +38,8 @@
   background-color: rgba(255, 255, 255, 0.8);
   z-index: 2;
   box-sizing: border-box;
-  padding: 20px;
-  -webkit-box-shadow: 14px 0px 84px -12px rgba(0,0,0,0.25);
-  -moz-box-shadow: 14px 0px 84px -12px rgba(0,0,0,0.25);
-  box-shadow: 14px 0px 84px -12px rgba(0,0,0,0.25);
+  padding: 60px;
+  overflow: auto;
 }
 
 #spk-canvas {
