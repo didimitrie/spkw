@@ -14,6 +14,7 @@ var SPKLoader   = require('./SPKLoader.js');
 var SPKCache    = require('./SPKCache.js');
 var SPKMaker    = require('./SPKObjectMaker.js');
 var SPKSync     = require('./SPKSync.js');
+var SPKConfig   = require('./SPKConfig.js');
 
 var SPK = function (wrapper) {
 
@@ -92,6 +93,8 @@ var SPK = function (wrapper) {
     
     // load parameters && go!
     
+    SPK.getModelMeta();
+
     SPK.loadParameters(function () {
 
       SPK.loadInstance(-1, function () {
@@ -111,6 +114,15 @@ var SPK = function (wrapper) {
       });      
 
     });
+
+  }
+
+  SPK.getModelMeta = function(callback) {
+
+
+    $.getJSON(SPKConfig.GEOMAPI + "?mn=VkCWKlR_l", function (data) {
+      console.log(data);
+    })
 
   }
 
@@ -458,7 +470,17 @@ var SPK = function (wrapper) {
   *************************************************/
 
   SPK.alignSliders = function () {
+    var containerHeight = $(SPK.HMTL.sidebar).innerHeight(); 
+    console.log(containerHeight + " <-th");
     
+    var wrapperHeight = $(SPK.HMTL.sidebar).find("#wrapper-params").height(); 
+    console.log(wrapperHeight + " <-th");
+
+    var diff = containerHeight - wrapperHeight;
+    console.log(diff)
+    if( diff > 0 ) {
+      $(SPK.HMTL.sidebar).find("#wrapper-params").css("top", diff/2 + "px");
+    }
   }
 
   SPK.beep = function () {
