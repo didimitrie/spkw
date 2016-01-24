@@ -70,12 +70,19 @@ var SPK = function (wrapper) {
   
   SPK.init = function(wrapper) {
 
+    if( wrapper === null ) {
+
+      console.error("No parent element found");
+
+      return;
+    }
+
     // get those elements in place, you cunt
     SPK.HMTL.wrapper = $(wrapper);
     SPK.HMTL.canvas  = $(wrapper).find("#spk-canvas");
     SPK.HMTL.sidebar = $(wrapper).find("#spk-sidebar");
     SPK.HMTL.sliders = $(SPK.HMTL.sidebar).find("#spk-sliders");
-    SPK.HMTL.meta = $(SPK.HMTL.sidebar).find("#spk-metadata");
+    SPK.HMTL.meta    = $(SPK.HMTL.sidebar).find("#spk-metadata");
 
     // need to init scene before: 
     // make scene > load static  & first instance (into scene) > 
@@ -89,17 +96,21 @@ var SPK = function (wrapper) {
 
       SPK.loadInstance(-1, function () {
         
+        SPK.alignSliders();
+
+        SPK.addNewInstance();
+
         SPK.loadStaticInstance();
         
         SPK.setupEnvironment();
       
         SPK.render(); 
 
+        SPKSync.addInstance(SPK);
+
       });      
 
     });
-    
-    SPKSync.addInstance(SPK);
 
   }
 
@@ -115,7 +126,7 @@ var SPK = function (wrapper) {
 
         $(SPK.HMTL.sliders).append( $( "<div>", { id: paramId, class: "parameter" } ) );
         
-        $( "#" + paramId ).append( "<p>" + params[i].name + "</p>" );
+        $( "#" + paramId ).append( "<p class='parameter_name'>" + params[i].name + "</p>" );
         
         var sliderId = paramId + "_slider_" + i;
 
@@ -150,9 +161,9 @@ var SPK = function (wrapper) {
 
         // set the callbacks
 
-        slider.on("slide", SPK.updateInstances);
+        slider.on("slide", SPK.removeCurrentInstance);
 
-        slider.on("change", SPK.updateInstances);
+        slider.on("change", SPK.addNewInstance);
 
         // add to master
 
@@ -179,8 +190,56 @@ var SPK = function (wrapper) {
 
   }
 
-  SPK.updateInstances = function () {
+  SPK.removeCurrentInstance = function () {
+
+    var opacity = 1;
+    var duration = 1000;
+    var out = [];
     
+    for(var i = 0; i < SPK.VIEWER.scene.children.length; i++ ) {
+
+      var myObj = SPK.VIEWER.scene.children[i];
+      
+      if( myObj.removable ) {
+
+          out.push(myObj);
+
+      }
+    }
+
+    var tweenOut = new TWEEN.Tween( { x: opacity } )
+    .to( {x: 0}, duration )
+    .onUpdate( function() {
+
+      for( var i = 0; i < out.length; i++ ) {
+
+        out[i].material.opacity = this.x;
+
+      }
+
+      if( this.x == opacity * 0.5 ) console.log("Wow");
+
+    })
+    .onComplete( function() {
+
+      for( var i = 0; i < out.length; i++ ) {
+
+        SPK.VIEWER.scene.remove(out[i]);
+        out[i].geometry.dispose();
+        out[i].material.dispose();
+
+      }
+
+      SPK.addNewInstance();
+
+    })  ;
+
+    tweenOut.start();
+
+  }
+
+  SPK.addNewInstance = function() {
+
     var key = SPK.getCurrentKey();
 
     if(SPK.GLOBALS.currentKey === key) {
@@ -191,78 +250,26 @@ var SPK = function (wrapper) {
     }
 
     SPK.GLOBALS.currentKey = key;
+    SPK.loadInstance( key, function() {
 
-    // TODO: Implement cache
-    // var myInstance = findInstance(key);
-    var myInstance = null;
+      var iin = [];
 
-    if(myInstance === null) {
+      for(var i = 0; i < SPK.VIEWER.scene.children.length; i++ ) {
 
-      SPK.loadInstance( key, SPK.swapInstances() );
-    
-    } else {
-
-      //SPK.loadCachedInstance(key);
-
-    }
-
-  }
-
-  SPK.swapInstances = function () {
-    
-    var iin = [], out = [];
-
-    for(var i = 0; i < SPK.VIEWER.scene.children.length; i++ ) {
-
-      var myObj = SPK.VIEWER.scene.children[i];
-      
-      if( myObj.removable ) {
+        var myObj = SPK.VIEWER.scene.children[i];
         
-        if( myObj.instance === SPK.GLOBALS.currentKey ) {
-
-          iin.push(myObj);
-
-        } else {
+        if( myObj.removable ) {
           
-          out.push(myObj);
+          if( myObj.instance === SPK.GLOBALS.currentKey ) {
 
+            iin.push(myObj);
+
+          } 
         }
       }
-    }
 
-    SPK.swap(iin, out);
-
-  }
-
-  SPK.swap = function(iin, out) {
-    
-    var opacity = 1;
-    var duration = 600;
-
-    var tweenOut = new TWEEN.Tween( { x: opacity } )
-      .to( {x: 0}, duration )
-      .onUpdate( function() {
-
-        for( var i = 0; i < out.length; i++ ) {
-
-          out[i].material.opacity = this.x;
-
-        }
-
-      })
-      .onComplete( function() {
-
-        for( var i = 0; i < out.length; i++ ) {
-
-          SPK.VIEWER.scene.remove(out[i]);
-          out[i].geometry.dispose();
-          out[i].material.dispose();
-
-        }
-
-      });
-
-    var tweenIn = new TWEEN.Tween( { x : 0 } )
+      var duration = 600, opacity = 1;
+      var tweenIn = new TWEEN.Tween( { x : 0 } )
       .to( { x: opacity }, duration )
       .onUpdate( function() {
         for( var i = 0; i < iin.length; i++ ) {
@@ -271,13 +278,10 @@ var SPK = function (wrapper) {
 
         }
       })
-      .onComplete( function() {
 
-      })
+      tweenIn.start();
 
-    tweenIn.start();
-    tweenOut.start();
-    // not sure this is the right way
+    });
 
   }
 
@@ -399,14 +403,14 @@ var SPK = function (wrapper) {
 
         SPKMaker.make(obj.geometries[i], "static", function( obj ) { 
           
-          // TODO : Add to scene
           // TODO : Make unremovable
           
           obj.removable = false;
+
+          obj.material.opacity = 1;
           
           SPK.VIEWER.scene.add(obj);
           
-
         });
 
       }
@@ -447,6 +451,14 @@ var SPK = function (wrapper) {
     //SPK.VIEWER.scene.add( plane );
     SPK.VIEWER.scene.add( grid );
 
+  }
+
+  /*************************************************
+  /   SPK Random functions that should probs go somewehere else
+  *************************************************/
+
+  SPK.alignSliders = function () {
+    
   }
 
   SPK.beep = function () {

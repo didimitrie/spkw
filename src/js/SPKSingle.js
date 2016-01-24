@@ -14,5 +14,7 @@ $( function() {
 
   var mySPK  = new SPK( $( '#spk-viewer' ) );
 
+  mySPK.on('ready', function () { console.log("Test Stefanescu")})
+
 });
 

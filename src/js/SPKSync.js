@@ -31,10 +31,6 @@ var SPKSync = function (spkInstances) {
         camToSync.updateProjectionMatrix();
       }
     }
-    
-  }
-
-  SPKSync.sync = function () {
 
   }
 
