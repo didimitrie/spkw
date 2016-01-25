@@ -41,6 +41,7 @@ var SPK = function (wrapper) {
   *************************************************/
 
   SPK.GLOBALS = {
+    model : "",
     sliders : [],
     currentKey : "",
     boundingSphere : "",
@@ -85,6 +86,10 @@ var SPK = function (wrapper) {
     SPK.HMTL.sliders = $(SPK.HMTL.sidebar).find("#spk-sliders");
     SPK.HMTL.meta    = $(SPK.HMTL.sidebar).find("#spk-metadata");
 
+    var href = $(window).attr("href");
+    SPK.GLOBALS.mode = href.substr(href.lastIndexOf('/') + 1);
+    console.log("MODEL: " + href);
+
     // need to init scene before: 
     // make scene > load static  & first instance (into scene) > 
     // > compute bounding box > setup environment > renderloop
@@ -118,7 +123,6 @@ var SPK = function (wrapper) {
   }
 
   SPK.getModelMeta = function(callback) {
-
 
     $.getJSON(SPKConfig.GEOMAPI + "?mn=VkCWKlR_l", function (data) {
       console.log(data);
