@@ -41,11 +41,10 @@ var SPK = function (wrapper) {
   *************************************************/
 
   SPK.GLOBALS = {
-    model : "",
+    metadata : "",
     sliders : [],
     currentKey : "",
-    boundingSphere : "",
-    tweens : ""
+    boundingSphere : ""
   }
 
   /*************************************************
@@ -86,9 +85,10 @@ var SPK = function (wrapper) {
     SPK.HMTL.sliders = $(SPK.HMTL.sidebar).find("#spk-sliders");
     SPK.HMTL.meta    = $(SPK.HMTL.sidebar).find("#spk-metadata");
 
-    var href = $(window).attr("href");
-    SPK.GLOBALS.mode = href.substr(href.lastIndexOf('/') + 1);
-    console.log("MODEL: " + href);
+    // get the model url
+    var href = window.location.pathname;
+
+    SPK.GLOBALS.model = href.substr(href.lastIndexOf('/') + 1);
 
     // need to init scene before: 
     // make scene > load static  & first instance (into scene) > 
@@ -98,41 +98,49 @@ var SPK = function (wrapper) {
     
     // load parameters && go!
     
-    SPK.getModelMeta();
+    SPK.getModelMeta(function () {
 
-    SPK.loadParameters(function () {
+      SPK.loadParameters(function () {
 
-      SPK.loadInstance(-1, function () {
+        SPK.loadInstance(-1, function () {
+          
+          SPK.alignSliders();
+
+          SPK.addNewInstance();
+
+          SPK.loadStaticInstance();
+          
+          SPK.setupEnvironment();
         
-        SPK.alignSliders();
+          SPK.render(); 
 
-        SPK.addNewInstance();
+          SPKSync.addInstance(SPK);
 
-        SPK.loadStaticInstance();
-        
-        SPK.setupEnvironment();
-      
-        SPK.render(); 
+        });      
 
-        SPKSync.addInstance(SPK);
-
-      });      
+      });
 
     });
+
+   
 
   }
 
   SPK.getModelMeta = function(callback) {
 
-    $.getJSON(SPKConfig.GEOMAPI + "?mn=VkCWKlR_l", function (data) {
-      console.log(data);
+    $.getJSON(SPKConfig.GEOMAPI + SPK.GLOBALS.model, function (data) {
+      
+      SPK.GLOBALS.metadata = data;
+
+      callback();
+
     })
 
   }
 
   SPK.loadParameters = function(callback) {
 
-    $.getJSON("./testmodel/params.json", function(data) {
+    $.getJSON(SPK.GLOBALS.metadata.paramsFile, function(data) {
       
       var params = data.parameters;
       
@@ -413,7 +421,7 @@ var SPK = function (wrapper) {
 
   SPK.loadStaticInstance = function() {
 
-    SPKLoader.load( "./testmodel/static.json", function( obj ) {
+    SPKLoader.load( SPK.GLOBALS.metadata.staticGeoFile, function( obj ) {
 
       for( var i = 0; i < obj.geometries.length; i++ ) {
 
